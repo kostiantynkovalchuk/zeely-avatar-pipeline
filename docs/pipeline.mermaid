@@ -1,0 +1,38 @@
+flowchart TD
+    subgraph INPUT["📁 Input"]
+        A["User Photo\n(arbitrary background & pose)"]
+        G["Garment Reference Image\nor Text Prompt"]
+    end
+
+    subgraph STEP1["Stage 1: Avatar Generation"]
+        B["Upload to fal.ai CDN"]
+        C["BiRefNet v2 — Portrait Mode\nBackground Removal\nTransparent PNG output"]
+        D["Composite on White #FFFFFF\n+ Auto-crop to 3:4 portrait\n+ Resize to 768×1024"]
+        E{"PuLID\nEnhancement?"}
+        F["FLUX PuLID\nIdentity-preserving\nstudio relight"]
+        H["avatar.png ✓"]
+    end
+
+    subgraph STEP2["Stage 2: Outfit Transfer"]
+        I["IDM-VTON via Replicate\ncuuupid/idm-vton\nauto_mask + auto_crop"]
+        J["Post-processing\nWhite BG verification\nDimension matching"]
+        K["avatar_outfit.png ✓"]
+    end
+
+    subgraph OUTPUT["📁 Output"]
+        L["output/\n  001/avatar.png\n  001/avatar_outfit.png\n  batch_report.json"]
+    end
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E -- Yes --> F
+    F --> H
+    E -- No --> H
+    H --> I
+    G --> I
+    I --> J
+    J --> K
+    K --> L
+    H --> L
