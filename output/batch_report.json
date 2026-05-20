@@ -4,14 +4,14 @@
     "success": 0,
     "qa_passed": 0,
     "failed": 4,
-    "seconds": 0.3,
+    "seconds": 0.2,
     "avg_per_user": 0.1,
     "preset": "studio",
     "pulid": false,
     "parallel": true
   },
   "cache": {
-    "cached_files": 0
+    "cached_files": 4
   },
   "results": [
     {
@@ -23,7 +23,7 @@
       "avatar_qa": null,
       "outfit_qa": null,
       "errors": [
-        "Avatar: Client error '403 Forbidden' for url 'https://rest.fal.ai/storage/auth/token?storage_type=fal-cdn-v3'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+        "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
         "avatar_s": 0.2
@@ -38,7 +38,7 @@
       "avatar_qa": null,
       "outfit_qa": null,
       "errors": [
-        "Avatar: Client error '403 Forbidden' for url 'https://rest.fal.ai/storage/auth/token?storage_type=fal-cdn-v3'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+        "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
         "avatar_s": 0.2
@@ -53,7 +53,7 @@
       "avatar_qa": null,
       "outfit_qa": null,
       "errors": [
-        "Avatar: Client error '403 Forbidden' for url 'https://rest.fal.ai/storage/auth/token?storage_type=fal-cdn-v3'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+        "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
         "avatar_s": 0.2
@@ -68,10 +68,10 @@
       "avatar_qa": null,
       "outfit_qa": null,
       "errors": [
-        "Avatar: Client error '403 Forbidden' for url 'https://rest.fal.ai/storage/auth/token?storage_type=fal-cdn-v3'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403"
+        "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
-        "avatar_s": 0.1
+        "avatar_s": 0.0
       }
     }
   ]

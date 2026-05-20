@@ -267,9 +267,14 @@ def download_image(url: str, save_path: str) -> str:
 
 
 def _raw_upload_to_fal(image_path: str) -> str:
-    """Direct upload to fal.ai CDN (internal — use upload_to_fal instead)."""
-    import fal_client
-    return fal_client.upload_file(image_path)
+    """Encode image as base64 data URI (fal.ai models accept data URIs directly)."""
+    import base64, mimetypes
+    mime, _ = mimetypes.guess_type(image_path)
+    if not mime:
+        mime = "image/png"
+    with open(image_path, "rb") as f:
+        data = base64.b64encode(f.read()).decode("utf-8")
+    return f"data:{mime};base64,{data}"
 
 
 def upload_to_fal(image_path: str) -> str:
