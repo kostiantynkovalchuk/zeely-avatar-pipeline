@@ -1,11 +1,11 @@
 {
   "summary": {
     "total": 4,
-    "success": 0,
+    "success": 4,
     "qa_passed": 1,
-    "failed": 4,
-    "seconds": 18.2,
-    "avg_per_user": 4.5,
+    "failed": 0,
+    "seconds": 86.2,
+    "avg_per_user": 21.6,
     "preset": "studio",
     "pulid": false,
     "parallel": false
@@ -17,9 +17,9 @@
     {
       "user_id": "001",
       "source_file": "001.webp",
-      "status": "partial_failure",
+      "status": "success",
       "avatar_path": "output/001/avatar.png",
-      "outfit_path": null,
+      "outfit_path": "output/001/avatar_outfit.png",
       "avatar_qa": {
         "bg_purity": 0.555345969819654,
         "blur_score": 200.67491309756102,
@@ -28,22 +28,27 @@
         "dimensions_ok": true,
         "passed": false
       },
-      "outfit_qa": null,
-      "errors": [
-        "Outfit: ReplicateError Details:\ntitle: Insufficient credit\nstatus: 402\ndetail: You have insufficient credit to run this model. Go to https://replicate.com/account/billing#billing to purchase credit. Once you purchase credit, please wait a few minutes before trying again."
-      ],
+      "outfit_qa": {
+        "bg_purity": 0.5567798429640535,
+        "blur_score": 182.45183254030658,
+        "face_detected": true,
+        "face_area_pct": 0.69,
+        "dimensions_ok": true,
+        "passed": false
+      },
+      "errors": [],
       "timings": {
-        "avatar_s": 2.6,
-        "outfit_s": 1.2,
-        "total_s": 3.8
+        "avatar_s": 3.7,
+        "outfit_s": 18.6,
+        "total_s": 22.3
       }
     },
     {
       "user_id": "002",
       "source_file": "002.jpg",
-      "status": "partial_failure",
+      "status": "success",
       "avatar_path": "output/002/avatar.png",
-      "outfit_path": null,
+      "outfit_path": "output/002/avatar_outfit.png",
       "avatar_qa": {
         "bg_purity": 0.5926113360323887,
         "blur_score": 531.4700243625945,
@@ -52,22 +57,27 @@
         "dimensions_ok": true,
         "passed": false
       },
-      "outfit_qa": null,
-      "errors": [
-        "Outfit: ReplicateError Details:\ntitle: Insufficient credit\nstatus: 402\ndetail: You have insufficient credit to run this model. Go to https://replicate.com/account/billing#billing to purchase credit. Once you purchase credit, please wait a few minutes before trying again."
-      ],
+      "outfit_qa": {
+        "bg_purity": 0.602188381793645,
+        "blur_score": 458.05315071403794,
+        "face_detected": true,
+        "face_area_pct": 0.6,
+        "dimensions_ok": true,
+        "passed": false
+      },
+      "errors": [],
       "timings": {
-        "avatar_s": 2.3,
-        "outfit_s": 1.1,
-        "total_s": 3.4
+        "avatar_s": 1.5,
+        "outfit_s": 17.7,
+        "total_s": 19.2
       }
     },
     {
       "user_id": "003",
       "source_file": "003.webp",
-      "status": "partial_failure",
+      "status": "success",
       "avatar_path": "output/003/avatar.png",
-      "outfit_path": null,
+      "outfit_path": "output/003/avatar_outfit.png",
       "avatar_qa": {
         "bg_purity": 0.6795945282787388,
         "blur_score": 325.4346490650326,
@@ -76,22 +86,27 @@
         "dimensions_ok": true,
         "passed": false
       },
-      "outfit_qa": null,
-      "errors": [
-        "Outfit: ReplicateError Details:\ntitle: Insufficient credit\nstatus: 402\ndetail: You have insufficient credit to run this model. Go to https://replicate.com/account/billing#billing to purchase credit. Once you purchase credit, please wait a few minutes before trying again."
-      ],
+      "outfit_qa": {
+        "bg_purity": 0.6811817568396515,
+        "blur_score": 183.08331488528106,
+        "face_detected": true,
+        "face_area_pct": 0.958,
+        "dimensions_ok": true,
+        "passed": false
+      },
+      "errors": [],
       "timings": {
-        "avatar_s": 2.5,
-        "outfit_s": 1.0,
-        "total_s": 3.5
+        "avatar_s": 3.7,
+        "outfit_s": 18.3,
+        "total_s": 22.0
       }
     },
     {
       "user_id": "004",
       "source_file": "004.jpg",
-      "status": "partial_failure",
+      "status": "success",
       "avatar_path": "output/004/avatar.png",
-      "outfit_path": null,
+      "outfit_path": "output/004/avatar_outfit.png",
       "avatar_qa": {
         "bg_purity": 1.0,
         "blur_score": 2273.588342921161,
@@ -100,14 +115,19 @@
         "dimensions_ok": true,
         "passed": true
       },
-      "outfit_qa": null,
-      "errors": [
-        "Outfit: ReplicateError Details:\ntitle: Insufficient credit\nstatus: 402\ndetail: You have insufficient credit to run this model. Go to https://replicate.com/account/billing#billing to purchase credit. Once you purchase credit, please wait a few minutes before trying again."
-      ],
+      "outfit_qa": {
+        "bg_purity": 0.9988805054594528,
+        "blur_score": 273.1902420371771,
+        "face_detected": true,
+        "face_area_pct": 0.454,
+        "dimensions_ok": true,
+        "passed": true
+      },
+      "errors": [],
       "timings": {
-        "avatar_s": 6.3,
-        "outfit_s": 1.2,
-        "total_s": 7.5
+        "avatar_s": 4.7,
+        "outfit_s": 18.0,
+        "total_s": 22.7
       }
     }
   ]

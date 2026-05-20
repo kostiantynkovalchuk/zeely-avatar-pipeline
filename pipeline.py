@@ -501,6 +501,12 @@ def generate_avatar(
 # STEP 2: Outfit Transfer
 # ---------------------------------------------------------------------------
 
+def _garment_description(garment_path: str) -> str:
+    """Derive a human-readable garment description from the filename."""
+    stem = Path(garment_path).stem
+    return stem.replace("_", " ").replace("-", " ").strip() or "garment"
+
+
 @with_retry
 def _run_idm_vton(avatar_path: str, garment_path: str, category: str) -> str:
     """Run IDM-VTON with retry. Returns result URL."""
@@ -511,18 +517,17 @@ def _run_idm_vton(avatar_path: str, garment_path: str, category: str) -> str:
         input={
             "human_img": open(avatar_path, "rb"),
             "garm_img": open(garment_path, "rb"),
+            "garment_des": _garment_description(garment_path),
             "category": category,
             "steps": VTON_STEPS,
             "seed": VTON_SEED,
-            "auto_mask": True,
-            "auto_crop": True,
+            "crop": True,
         },
+        use_file_output=False,
     )
 
     if isinstance(output, str):
         return output
-    elif hasattr(output, "url"):
-        return output.url
     elif isinstance(output, list) and len(output) > 0:
         return str(output[0])
     return str(output)
