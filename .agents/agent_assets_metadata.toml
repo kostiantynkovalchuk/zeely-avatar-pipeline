@@ -5,7 +5,7 @@ generated = []
 id = "k-dw4wydOUw_tkdr4zQoy"
 uri = "file://output/001/avatar.png"
 type = "image"
-title = "User 001 — Avatar"
+title = "User 001 — PuLID Avatar"
 
 [[outputs]]
 id = "rWzdPTK9_HDrRD3WItRx_"
@@ -17,7 +17,7 @@ title = "User 001 — Outfit"
 id = "ZBYZZ-9cFWMhkqR_SVJH8"
 uri = "file://output/002/avatar.png"
 type = "image"
-title = "User 002 — Avatar"
+title = "User 002 — PuLID Avatar"
 
 [[outputs]]
 id = "fVjeTHAdWqCzUqZgNyabp"
@@ -29,7 +29,7 @@ title = "User 002 — Outfit"
 id = "Sv-lBJ194TWQzBP47DN5Y"
 uri = "file://output/003/avatar.png"
 type = "image"
-title = "User 003 — Avatar"
+title = "User 003 — PuLID Avatar"
 
 [[outputs]]
 id = "6iT7juD_zrERDuXhnEw7k"
@@ -41,7 +41,7 @@ title = "User 003 — Outfit"
 id = "UBeTBAWrMfwuATccYIMNu"
 uri = "file://output/004/avatar.png"
 type = "image"
-title = "User 004 — Avatar"
+title = "User 004 — PuLID Avatar"
 
 [[outputs]]
 id = "7eyZGJALJzy0GO9Zy8edB"

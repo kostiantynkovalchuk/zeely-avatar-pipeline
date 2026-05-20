@@ -83,8 +83,9 @@ PROMPT_PRESETS = {
         "name": "Studio Portrait",
         "prompt": (
             "Professional studio headshot portrait of this person, "
-            "clean white background, soft diffused studio lighting with softboxes, "
-            "neutral pose facing camera, half-body shot from head to waist, "
+            "pure white background, soft diffused studio lighting, "
+            "neutral frontal pose facing camera directly, "
+            "half-body shot from head to waist, arms relaxed at sides, "
             "even skin tones, no harsh shadows, high detail, "
             "8K quality studio photograph"
         ),
@@ -483,15 +484,21 @@ def auto_crop_portrait(img: Image.Image) -> Image.Image:
 
 
 @with_retry
-def _run_pulid(image_url: str, preset: dict) -> str:
-    """Run FLUX PuLID with retry. Returns generated image URL."""
+def _run_pulid(image_path: str, preset: dict) -> str:
+    """
+    Run FLUX PuLID with retry. Returns generated image URL.
+    Uploads the source file to fal.ai to obtain a hosted URL — PuLID's
+    reference_images field requires a real HTTPS URL, not a base64 data URI.
+    """
     import fal_client
+
+    hosted_url = fal_client.upload_file(image_path)
 
     result = fal_client.subscribe(
         "fal-ai/flux-pulid",
         arguments={
             "prompt": preset["prompt"],
-            "reference_images": [{"image_url": image_url}],
+            "reference_image_url": hosted_url,
             "image_size": {"width": OUTPUT_WIDTH, "height": OUTPUT_HEIGHT},
             "num_inference_steps": preset["steps"],
             "guidance_scale": preset["guidance_scale"],
@@ -506,38 +513,36 @@ def _run_pulid(image_url: str, preset: dict) -> str:
 def generate_avatar(
     image_path: str,
     output_path: str,
-    use_pulid: bool = False,
     preset_name: str = DEFAULT_PRESET,
 ) -> QualityReport:
     """
     Full avatar generation pipeline:
-    1. Upload image (cached)
-    2. Remove background (BiRefNet portrait + retry)
-    3. Composite on white #FFFFFF
-    4. (Optional) FLUX PuLID studio relight
-    5. Automated quality assessment
+    1. PRIMARY — FLUX PuLID: upload photo, generate studio portrait w/ white bg
+    2. FALLBACK — BiRefNet + composite: if PuLID fails, cut out background instead
+    3. Automated quality assessment
 
     Returns QualityReport.
     """
     log.info(f"Generating avatar for: {image_path}")
 
-    image_url = upload_to_fal(image_path)
-    fg_url = remove_background_fal(image_url)
+    preset = PROMPT_PRESETS.get(preset_name, PROMPT_PRESETS[DEFAULT_PRESET])
 
-    fg_path = output_path.replace(".png", "_fg.png")
-    download_image(fg_url, fg_path)
-    composite_on_white(fg_path, output_path)
-
-    if use_pulid:
-        preset = PROMPT_PRESETS.get(preset_name, PROMPT_PRESETS[DEFAULT_PRESET])
-        log.info(f"  → FLUX PuLID enhancement ({preset['name']})...")
-        enhanced_url = _run_pulid(image_url, preset)
-        download_image(enhanced_url, output_path)
-        log.info("  ✓ PuLID applied")
-
-    # Cleanup
-    if os.path.exists(fg_path):
-        os.remove(fg_path)
+    # PRIMARY: FLUX PuLID — generates white background natively
+    try:
+        log.info(f"  → FLUX PuLID studio generation ({preset['name']})...")
+        avatar_url = _run_pulid(image_path, preset)
+        download_image(avatar_url, output_path)
+        log.info("  ✓ PuLID portrait generated")
+    except Exception as pulid_err:
+        log.warning(f"  ⚠ PuLID failed ({pulid_err}), falling back to BiRefNet composite...")
+        image_url = upload_to_fal(image_path)
+        fg_url = remove_background_fal(image_url)
+        fg_path = output_path.replace(".png", "_fg.png")
+        download_image(fg_url, fg_path)
+        composite_on_white(fg_path, output_path)
+        if os.path.exists(fg_path):
+            os.remove(fg_path)
+        log.info("  ✓ Fallback BiRefNet composite applied")
 
     qa = assess_quality(output_path)
     status = "PASS" if qa.passed else "WARN"
@@ -617,7 +622,6 @@ def process_single_user(
     user_image_path: str,
     outfit_path: str,
     output_dir: str,
-    use_pulid: bool = False,
     preset_name: str = DEFAULT_PRESET,
     outfit_category: str = "upper_body",
 ) -> UserResult:
@@ -631,7 +635,7 @@ def process_single_user(
     avatar_path = os.path.join(user_output_dir, "avatar.png")
     t0 = time.time()
     try:
-        avatar_qa = generate_avatar(user_image_path, avatar_path, use_pulid, preset_name)
+        avatar_qa = generate_avatar(user_image_path, avatar_path, preset_name)
         result.avatar_path = avatar_path
         result.avatar_qa = asdict(avatar_qa)
         result.timings["avatar_s"] = round(time.time() - t0, 1)
@@ -665,7 +669,6 @@ def run_batch(
     input_dir: str,
     outfit_dir: str,
     output_dir: str,
-    use_pulid: bool = False,
     preset_name: str = DEFAULT_PRESET,
     outfit_category: str = "upper_body",
     parallel: bool = False,
@@ -688,7 +691,7 @@ def run_batch(
     log.info("=" * 60)
     log.info("Zeely AI Avatar Pipeline — Batch Mode")
     log.info(f"Users: {len(user_images)} | Outfits: {len(outfit_images)}")
-    log.info(f"PuLID: {'ON' if use_pulid else 'OFF'} | Preset: {preset_name}")
+    log.info(f"Mode: PuLID primary (BiRefNet fallback) | Preset: {preset_name}")
     log.info(f"Parallel: {'ON' if parallel else 'OFF'} | Workers: {MAX_WORKERS}")
     log.info("=" * 60)
 
@@ -707,7 +710,7 @@ def run_batch(
             futures = {
                 pool.submit(
                     process_single_user, uid, upath, opath,
-                    output_dir, use_pulid, preset_name, outfit_category,
+                    output_dir, preset_name, outfit_category,
                 ): uid
                 for uid, upath, opath in tasks
             }
@@ -723,7 +726,7 @@ def run_batch(
         for uid, upath, opath in tasks:
             log.info(f"\n--- User {uid}: {Path(upath).name} ---")
             results.append(process_single_user(
-                uid, upath, opath, output_dir, use_pulid, preset_name, outfit_category,
+                uid, upath, opath, output_dir, preset_name, outfit_category,
             ))
             log.info(f"  → {results[-1].status}")
 
@@ -738,7 +741,7 @@ def run_batch(
             "total": len(results), "success": ok, "qa_passed": qa_ok,
             "failed": len(results) - ok, "seconds": elapsed,
             "avg_per_user": round(elapsed / max(1, len(results)), 1),
-            "preset": preset_name, "pulid": use_pulid, "parallel": parallel,
+            "preset": preset_name, "mode": "pulid_primary", "parallel": parallel,
         },
         "cache": _upload_cache.stats(),
         "results": [asdict(r) for r in results],
@@ -767,8 +770,8 @@ def main():
         epilog="""
 Examples:
   python pipeline.py                                     # Batch, defaults
-  python pipeline.py --pulid --preset fashion            # Fashion preset
-  python pipeline.py --parallel --pulid                  # Parallel + PuLID
+  python pipeline.py --preset fashion                    # Fashion preset
+  python pipeline.py --parallel                          # Parallel batch
   python pipeline.py -s photo.jpg --outfit-single b.jpg  # Single image
   python pipeline.py --qa-only output/001/avatar.png     # QA scoring only
         """,
@@ -777,7 +780,6 @@ Examples:
     p.add_argument("--input", "-i", default=DEFAULT_INPUT_DIR)
     p.add_argument("--outfits", "-f", default=DEFAULT_OUTFIT_DIR)
     p.add_argument("--output", "-o", default=DEFAULT_OUTPUT_DIR)
-    p.add_argument("--pulid", action="store_true", help="Enable PuLID studio enhancement")
     p.add_argument("--preset", "-p", choices=list(PROMPT_PRESETS.keys()), default=DEFAULT_PRESET)
     p.add_argument("--category", "-c", choices=["upper_body", "lower_body", "dresses"], default="upper_body")
     p.add_argument("--parallel", action="store_true", help=f"Parallel processing ({MAX_WORKERS} workers)")
@@ -803,10 +805,10 @@ Examples:
             outfit = str(ofs[0]) if ofs else None
         if not outfit:
             log.error("No outfit specified"); sys.exit(1)
-        r = process_single_user("001", args.single, outfit, args.output, args.pulid, args.preset, args.category)
+        r = process_single_user("001", args.single, outfit, args.output, args.preset, args.category)
         print(json.dumps(asdict(r), indent=2))
     else:
-        run_batch(args.input, args.outfits, args.output, args.pulid, args.preset, args.category, args.parallel)
+        run_batch(args.input, args.outfits, args.output, args.preset, args.category, args.parallel)
 
 
 if __name__ == "__main__":

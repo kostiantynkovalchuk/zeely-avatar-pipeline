@@ -2,16 +2,16 @@
   "summary": {
     "total": 4,
     "success": 4,
-    "qa_passed": 4,
+    "qa_passed": 0,
     "failed": 0,
-    "seconds": 109.8,
-    "avg_per_user": 27.4,
+    "seconds": 122.5,
+    "avg_per_user": 30.6,
     "preset": "studio",
-    "pulid": false,
+    "mode": "pulid_primary",
     "parallel": false
   },
   "cache": {
-    "cached_files": 4
+    "cached_files": 0
   },
   "results": [
     {
@@ -21,26 +21,26 @@
       "avatar_path": "output/001/avatar.png",
       "outfit_path": "output/001/avatar_outfit.png",
       "avatar_qa": {
-        "bg_purity": 1.0,
-        "blur_score": 382.6449188817448,
+        "bg_purity": 0.7135014108698319,
+        "blur_score": 397.58657157255465,
         "face_detected": true,
-        "face_area_pct": 0.345,
+        "face_area_pct": 0.306,
         "dimensions_ok": true,
-        "passed": true
+        "passed": false
       },
       "outfit_qa": {
-        "bg_purity": 1.0,
-        "blur_score": 667.2211063423238,
+        "bg_purity": 0.7347948104527052,
+        "blur_score": 801.3543452862383,
         "face_detected": true,
-        "face_area_pct": 0.331,
+        "face_area_pct": 0.29,
         "dimensions_ok": true,
-        "passed": true
+        "passed": false
       },
       "errors": [],
       "timings": {
-        "avatar_s": 5.5,
-        "outfit_s": 27.8,
-        "total_s": 33.3
+        "avatar_s": 12.4,
+        "outfit_s": 17.9,
+        "total_s": 30.3
       }
     },
     {
@@ -50,26 +50,26 @@
       "avatar_path": "output/002/avatar.png",
       "outfit_path": "output/002/avatar_outfit.png",
       "avatar_qa": {
-        "bg_purity": 1.0,
-        "blur_score": 701.708135231061,
+        "bg_purity": 0.10573089191510245,
+        "blur_score": 873.8811348241798,
         "face_detected": true,
-        "face_area_pct": 0.529,
+        "face_area_pct": 0.609,
         "dimensions_ok": true,
-        "passed": true
+        "passed": false
       },
       "outfit_qa": {
-        "bg_purity": 1.0,
-        "blur_score": 857.4079869678244,
+        "bg_purity": 0.09882223040117777,
+        "blur_score": 1650.1794210126002,
         "face_detected": true,
-        "face_area_pct": 0.491,
+        "face_area_pct": 0.505,
         "dimensions_ok": true,
-        "passed": true
+        "passed": false
       },
       "errors": [],
       "timings": {
-        "avatar_s": 2.2,
-        "outfit_s": 30.2,
-        "total_s": 32.4
+        "avatar_s": 12.0,
+        "outfit_s": 18.3,
+        "total_s": 30.3
       }
     },
     {
@@ -79,26 +79,26 @@
       "avatar_path": "output/003/avatar.png",
       "outfit_path": "output/003/avatar_outfit.png",
       "avatar_qa": {
-        "bg_purity": 1.0,
-        "blur_score": 761.2462565569562,
+        "bg_purity": 0.21020426941479572,
+        "blur_score": 1628.1603195591717,
         "face_detected": true,
-        "face_area_pct": 0.662,
+        "face_area_pct": 0.711,
         "dimensions_ok": true,
-        "passed": true
+        "passed": false
       },
       "outfit_qa": {
-        "bg_purity": 1.0,
-        "blur_score": 482.1245743352653,
+        "bg_purity": 0.22908998895841,
+        "blur_score": 893.8844099888156,
         "face_detected": true,
-        "face_area_pct": 0.649,
+        "face_area_pct": 0.72,
         "dimensions_ok": true,
-        "passed": true
+        "passed": false
       },
       "errors": [],
       "timings": {
-        "avatar_s": 1.7,
-        "outfit_s": 17.4,
-        "total_s": 19.1
+        "avatar_s": 12.4,
+        "outfit_s": 18.8,
+        "total_s": 31.2
       }
     },
     {
@@ -108,26 +108,26 @@
       "avatar_path": "output/004/avatar.png",
       "outfit_path": "output/004/avatar_outfit.png",
       "avatar_qa": {
-        "bg_purity": 1.0,
-        "blur_score": 1736.3337472476221,
+        "bg_purity": 0.22961139737455527,
+        "blur_score": 147.87736071271016,
         "face_detected": true,
-        "face_area_pct": 0.29,
+        "face_area_pct": 0.389,
         "dimensions_ok": true,
-        "passed": true
+        "passed": false
       },
       "outfit_qa": {
-        "bg_purity": 1.0,
-        "blur_score": 1171.0562205111808,
+        "bg_purity": 0.25146454422770215,
+        "blur_score": 146.5661338201147,
         "face_detected": true,
-        "face_area_pct": 0.183,
+        "face_area_pct": 0.397,
         "dimensions_ok": true,
-        "passed": true
+        "passed": false
       },
       "errors": [],
       "timings": {
-        "avatar_s": 6.8,
-        "outfit_s": 18.3,
-        "total_s": 25.1
+        "avatar_s": 12.1,
+        "outfit_s": 18.5,
+        "total_s": 30.6
       }
     }
   ]
