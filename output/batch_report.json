@@ -4,7 +4,7 @@
     "success": 0,
     "qa_passed": 0,
     "failed": 4,
-    "seconds": 0.2,
+    "seconds": 0.5,
     "avg_per_user": 0.1,
     "preset": "studio",
     "pulid": false,
@@ -26,7 +26,7 @@
         "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
-        "avatar_s": 0.2
+        "avatar_s": 0.5
       }
     },
     {
@@ -41,7 +41,7 @@
         "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
-        "avatar_s": 0.2
+        "avatar_s": 0.4
       }
     },
     {
@@ -56,7 +56,7 @@
         "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
-        "avatar_s": 0.2
+        "avatar_s": 0.5
       }
     },
     {
@@ -71,7 +71,7 @@
         "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
-        "avatar_s": 0.0
+        "avatar_s": 0.1
       }
     }
   ]
