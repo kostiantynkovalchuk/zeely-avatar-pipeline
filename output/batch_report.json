@@ -2,13 +2,13 @@
   "summary": {
     "total": 4,
     "success": 0,
-    "qa_passed": 0,
+    "qa_passed": 1,
     "failed": 4,
-    "seconds": 0.5,
-    "avg_per_user": 0.1,
+    "seconds": 8.5,
+    "avg_per_user": 2.1,
     "preset": "studio",
     "pulid": false,
-    "parallel": true
+    "parallel": false
   },
   "cache": {
     "cached_files": 4
@@ -26,7 +26,7 @@
         "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
-        "avatar_s": 0.5
+        "avatar_s": 0.3
       }
     },
     {
@@ -41,7 +41,7 @@
         "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
-        "avatar_s": 0.4
+        "avatar_s": 0.0
       }
     },
     {
@@ -56,22 +56,31 @@
         "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
       ],
       "timings": {
-        "avatar_s": 0.5
+        "avatar_s": 0.0
       }
     },
     {
       "user_id": "004",
       "source_file": "004.jpg",
-      "status": "failed",
-      "avatar_path": null,
+      "status": "partial_failure",
+      "avatar_path": "output/004/avatar.png",
       "outfit_path": null,
-      "avatar_qa": null,
+      "avatar_qa": {
+        "bg_purity": 1.0,
+        "blur_score": 2273.588342921161,
+        "face_detected": true,
+        "face_area_pct": 0.333,
+        "dimensions_ok": true,
+        "passed": true
+      },
       "outfit_qa": null,
       "errors": [
-        "Avatar: User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."
+        "Outfit: ReplicateError Details:\ntitle: Insufficient credit\nstatus: 402\ndetail: You have insufficient credit to run this model. Go to https://replicate.com/account/billing#billing to purchase credit. Once you purchase credit, please wait a few minutes before trying again."
       ],
       "timings": {
-        "avatar_s": 0.1
+        "avatar_s": 6.8,
+        "outfit_s": 1.3,
+        "total_s": 8.1
       }
     }
   ]
