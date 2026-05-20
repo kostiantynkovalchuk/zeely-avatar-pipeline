@@ -5,49 +5,49 @@ generated = []
 id = "k-dw4wydOUw_tkdr4zQoy"
 uri = "file://output/001/avatar.png"
 type = "image"
-title = "001 — Avatar (PuLID + face-swap)"
+title = "001 — Avatar (glasses prompt + new framing)"
 
 [[outputs]]
 id = "rWzdPTK9_HDrRD3WItRx_"
 uri = "file://output/001/avatar_outfit.png"
 type = "image"
-title = "001 — Outfit"
+title = "001 — Outfit (text corrected)"
 
 [[outputs]]
 id = "ZBYZZ-9cFWMhkqR_SVJH8"
 uri = "file://output/002/avatar.png"
 type = "image"
-title = "002 — Avatar (PuLID + face-swap)"
+title = "002 — Avatar (arms-down prompt)"
 
 [[outputs]]
 id = "fVjeTHAdWqCzUqZgNyabp"
 uri = "file://output/002/avatar_outfit.png"
 type = "image"
-title = "002 — Outfit"
+title = "002 — Outfit (text corrected)"
 
 [[outputs]]
 id = "Sv-lBJ194TWQzBP47DN5Y"
 uri = "file://output/003/avatar.png"
 type = "image"
-title = "003 — Avatar (PuLID + face-swap)"
+title = "003 — Avatar (half-body framing prompt)"
 
 [[outputs]]
 id = "6iT7juD_zrERDuXhnEw7k"
 uri = "file://output/003/avatar_outfit.png"
 type = "image"
-title = "003 — Outfit"
+title = "003 — Outfit (text corrected)"
 
 [[outputs]]
 id = "UBeTBAWrMfwuATccYIMNu"
 uri = "file://output/004/avatar.png"
 type = "image"
-title = "004 — Avatar (PuLID + face-swap)"
+title = "004 — Avatar (glasses prompt + new framing)"
 
 [[outputs]]
 id = "7eyZGJALJzy0GO9Zy8edB"
 uri = "file://output/004/avatar_outfit.png"
 type = "image"
-title = "004 — Outfit"
+title = "004 — Outfit (text corrected)"
 
 [[outputs]]
 id = "zL-5syd_pJfghtlalw49-"

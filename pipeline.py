@@ -82,12 +82,14 @@ PROMPT_PRESETS = {
     "studio": {
         "name": "Studio Portrait",
         "prompt": (
-            "Professional studio headshot portrait of this person, "
-            "pure white background, soft diffused studio lighting, "
-            "neutral frontal pose facing camera directly, "
-            "half-body shot from head to waist, arms relaxed at sides, "
-            "even skin tones, no harsh shadows, high detail, "
-            "8K quality studio photograph"
+            "Professional studio portrait photograph of this person, "
+            "pure white seamless background, soft diffused studio lighting with softboxes, "
+            "standing straight facing camera directly, "
+            "arms hanging naturally at sides with hands visible, "
+            "half-body shot framed from top of head to hip level "
+            "with 15 percent white space above head, "
+            "relaxed neutral expression, even skin tones, no harsh shadows, "
+            "extremely detailed and sharp, 8K studio photograph"
         ),
         "guidance_scale": 4.0,
         "id_weight": 1.0,
@@ -98,7 +100,10 @@ PROMPT_PRESETS = {
         "prompt": (
             "High-end fashion editorial portrait of this person, "
             "pure white seamless backdrop, professional fashion photography lighting, "
-            "confident neutral pose, half-body framing from head to hips, "
+            "standing straight facing camera, "
+            "arms hanging naturally at sides with hands visible, "
+            "half-body framing from top of head to hip level "
+            "with 15 percent white space above head, "
             "crisp details, magazine-quality skin retouching, "
             "shot on medium format camera"
         ),
@@ -111,7 +116,10 @@ PROMPT_PRESETS = {
         "prompt": (
             "Clean e-commerce model portrait of this person, "
             "plain white background, flat even lighting, "
-            "straight-on frontal pose, half-body crop, "
+            "standing straight frontal pose facing camera, "
+            "arms hanging naturally at sides with hands visible, "
+            "half-body crop from top of head to hip level "
+            "with 15 percent white space above head, "
             "commercial product photography style, "
             "sharp focus, consistent color temperature"
         ),
@@ -483,6 +491,41 @@ def auto_crop_portrait(img: Image.Image) -> Image.Image:
     return canvas
 
 
+# ---------------------------------------------------------------------------
+# User attribute helpers (glasses, etc.)
+# ---------------------------------------------------------------------------
+
+def _load_user_attributes(image_path: str) -> dict:
+    """
+    Load per-user attributes from user_attributes.json in the same directory as
+    the source photo.  Keys are source filenames (e.g. '001.webp').
+    Returns an empty dict if the file doesn't exist or the key isn't found.
+    """
+    attrs_file = os.path.join(os.path.dirname(os.path.abspath(image_path)), "user_attributes.json")
+    if not os.path.exists(attrs_file):
+        return {}
+    try:
+        with open(attrs_file) as fh:
+            data = json.load(fh)
+        return data.get(os.path.basename(image_path), {})
+    except Exception as exc:
+        log.warning(f"  ⚠ Could not read user_attributes.json: {exc}")
+        return {}
+
+
+def _build_prompt(preset: dict, user_attrs: dict) -> str:
+    """
+    Start from the preset prompt and inject attribute-specific language.
+    Currently handles: glasses.
+    """
+    base = preset["prompt"]
+    if user_attrs.get("glasses"):
+        desc = user_attrs.get("glasses_description", "glasses")
+        # Inject immediately after "this person" so all three presets are covered
+        base = base.replace("this person", f"this person wearing {desc}", 1)
+    return base
+
+
 @with_retry
 def _run_pulid(image_path: str, preset: dict) -> str:
     """
@@ -497,7 +540,7 @@ def _run_pulid(image_path: str, preset: dict) -> str:
     result = fal_client.subscribe(
         "fal-ai/flux-pulid",
         arguments={
-            "prompt": preset["prompt"],
+            "prompt": preset["_built_prompt"],
             "reference_image_url": hosted_url,
             "image_size": {"width": OUTPUT_WIDTH, "height": OUTPUT_HEIGHT},
             "num_inference_steps": preset["steps"],
@@ -547,7 +590,13 @@ def generate_avatar(
     """
     log.info(f"Generating avatar for: {image_path}")
 
-    preset = PROMPT_PRESETS.get(preset_name, PROMPT_PRESETS[DEFAULT_PRESET])
+    preset = dict(PROMPT_PRESETS.get(preset_name, PROMPT_PRESETS[DEFAULT_PRESET]))
+
+    # Inject per-user attributes (glasses etc.) into the prompt
+    user_attrs = _load_user_attributes(image_path)
+    preset["_built_prompt"] = _build_prompt(preset, user_attrs)
+    if user_attrs.get("glasses"):
+        log.info(f"  → Glasses detected: {user_attrs.get('glasses_description', 'glasses')}")
 
     # PASS 1: FLUX PuLID — studio body/pose/lighting
     try:
@@ -641,13 +690,114 @@ def _run_idm_vton(avatar_path: str, garment_path: str, category: str) -> str:
     return str(output)
 
 
+def correct_garment_text(outfit_path: str, garment_path: str) -> bool:
+    """
+    Post-process an IDM-VTON result to restore legible garment text.
+
+    IDM-VTON wrecks typography — the text pixels are not white; they are
+    brighter-than-average pixels within the green garment region.  We detect
+    text by luminance contrast (pixels > mean + 1.5σ inside the green mask),
+    find the same region in the clean garment reference, and paste the clean
+    version back using the contrast mask so only text pixels are touched.
+
+    Gracefully skips (logs a warning) if any step fails.
+    Returns True if the correction was applied, False otherwise.
+    """
+    try:
+        import numpy as np
+
+        outfit = Image.open(outfit_path).convert("RGB")
+        garment = Image.open(garment_path).convert("RGB")
+
+        out_arr = np.array(outfit, dtype=np.float32)
+        r, g, b = out_arr[:, :, 0], out_arr[:, :, 1], out_arr[:, :, 2]
+
+        # ── 1. Green garment mask ───────────────────────────────────────────
+        green_mask = (g > r + 20) & (g > b + 20) & (g > 60)
+        if green_mask.sum() < 500:
+            log.warning("  ⚠ correct_garment_text: green region too small, skipping")
+            return False
+
+        # ── 2. Detect text via luminance contrast inside the green region ───
+        lum = 0.299 * r + 0.587 * g + 0.114 * b
+        g_lum = lum[green_mask]
+        bright_thresh = g_lum.mean() + 1.5 * g_lum.std()
+        text_mask = (lum > bright_thresh) & green_mask
+
+        if text_mask.sum() < 50:
+            log.warning("  ⚠ correct_garment_text: no text contrast found in garment, skipping")
+            return False
+
+        # ── 3. Bounding box of text region in the output ────────────────────
+        rows = np.where(text_mask.any(axis=1))[0]
+        cols = np.where(text_mask.any(axis=0))[0]
+        y1, y2 = int(rows.min()), int(rows.max())
+        x1, x2 = int(cols.min()), int(cols.max())
+        text_w, text_h = x2 - x1, y2 - y1
+
+        if text_w < 20 or text_h < 5:
+            log.warning("  ⚠ correct_garment_text: text bbox too small, skipping")
+            return False
+
+        # ── 4. Extract clean text block from garment reference ───────────────
+        gw, gh = garment.size
+        ref_crop = garment.crop((
+            int(gw * 0.10), int(gh * 0.05),
+            int(gw * 0.90), int(gh * 0.60),
+        ))
+        ref_arr = np.array(ref_crop, dtype=np.float32)
+        rr, rg, rb = ref_arr[:, :, 0], ref_arr[:, :, 1], ref_arr[:, :, 2]
+
+        # Text in reference: bright pixels inside the green region
+        ref_green = (rg > rr + 20) & (rg > rb + 20) & (rg > 60)
+        ref_lum = 0.299 * rr + 0.587 * rg + 0.114 * rb
+        if ref_green.sum() > 50:
+            ref_g_lum = ref_lum[ref_green]
+            ref_thresh = ref_g_lum.mean() + 1.5 * ref_g_lum.std()
+            ref_text = (ref_lum > ref_thresh) & ref_green
+        else:
+            # Fallback: just use brightest pixels in entire crop
+            ref_thresh = ref_lum.mean() + 1.5 * ref_lum.std()
+            ref_text = ref_lum > ref_thresh
+
+        if ref_text.sum() > 50:
+            rrows = np.where(ref_text.any(axis=1))[0]
+            rcols = np.where(ref_text.any(axis=0))[0]
+            ref_crop = ref_crop.crop((
+                int(rcols.min()), int(rrows.min()),
+                int(rcols.max()), int(rrows.max()),
+            ))
+
+        # ── 5. Resize clean text to match output bbox and paste ─────────────
+        clean_resized = ref_crop.resize((text_w, text_h), Image.LANCZOS)
+
+        # Paste mask: only touch the detected text pixels
+        mask_arr = (text_mask[y1:y2, x1:x2].astype(np.uint8) * 255)
+        mask_img = Image.fromarray(mask_arr)
+
+        outfit_rgb = Image.open(outfit_path).convert("RGB")
+        outfit_rgb.paste(clean_resized, (x1, y1), mask_img)
+        outfit_rgb.save(outfit_path, "PNG")
+
+        log.info(
+            f"  ✓ Garment text corrected "
+            f"(bbox {x1},{y1}→{x2},{y2} = {text_w}×{text_h}px, "
+            f"{text_mask.sum():.0f} text pixels)"
+        )
+        return True
+
+    except Exception as exc:
+        log.warning(f"  ⚠ correct_garment_text failed: {exc}, skipping")
+        return False
+
+
 def transfer_outfit(
     avatar_path: str,
     garment_path: str,
     output_path: str,
     category: str = "upper_body",
 ) -> QualityReport:
-    """Outfit transfer with retry and QA. Returns QualityReport."""
+    """Outfit transfer with retry, garment text correction, and QA. Returns QualityReport."""
     log.info(f"  → IDM-VTON outfit transfer (category: {category})...")
 
     result_url = _run_idm_vton(avatar_path, garment_path, category)
@@ -658,6 +808,9 @@ def transfer_outfit(
     if img.size != (OUTPUT_WIDTH, OUTPUT_HEIGHT):
         img = img.resize((OUTPUT_WIDTH, OUTPUT_HEIGHT), Image.LANCZOS)
         img.save(output_path, "PNG", quality=95)
+
+    # Post-process: restore legible garment text warped by diffusion
+    correct_garment_text(output_path, garment_path)
 
     qa = assess_quality(output_path)
     status = "PASS" if qa.passed else "WARN"

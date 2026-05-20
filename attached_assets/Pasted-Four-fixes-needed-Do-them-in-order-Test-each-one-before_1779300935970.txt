@@ -1,0 +1,54 @@
+Four fixes needed. Do them in order. Test each one before moving to the next.
+Fix 1: Glasses detection and prompt injection
+User 001 wears glasses in the source photo but the PuLID avatar drops them because the prompt doesn't mention glasses. Add a simple glasses detection step before PuLID runs:
+
+Before calling PuLID, analyze the source photo for glasses. Use a simple approach: load the image, crop the upper face region (top 40% of image, center 60% horizontally), and check for the presence of straight horizontal edges in that region using PIL edge detection. Alternatively, just check if the source image filename or a sidecar JSON specifies glasses.
+Actually the simplest reliable approach: use the fal.ai face-analysis or just add a --glasses CLI flag for now. But even simpler — add a pre-processing function that uses a lightweight approach: check if there are thin dark horizontal lines across the eye region by sampling pixel brightness patterns. If detected, append "wearing glasses" to the PuLID prompt.
+The most pragmatic approach for this test task: create a small JSON config file input/users/user_attributes.json that maps each source filename to attributes:
+
+json{
+  "001.webp": {"glasses": true, "glasses_description": "round pink-tinted glasses"},
+  "002.jpg": {"glasses": false},
+  "003.webp": {"glasses": false},
+  "004.jpg": {"glasses": true, "glasses_description": "rectangular dark-framed glasses"}
+}
+
+In generate_avatar(), before calling PuLID, check if this config exists and if the user has glasses. If yes, append the glasses description to the PuLID prompt. For example the prompt becomes: "Professional studio headshot portrait of this person wearing round pink-tinted glasses, clean white background..."
+
+Create the JSON file for our 4 users and wire it into the PuLID prompt construction.
+Fix 2: Force arms-down pose and proper half-body framing
+User 002's avatar has crossed arms which causes sleeve bleed-through during outfit transfer. User 003's avatar is framed too tight (headshot instead of half-body), leaving no room for the hoodie.
+Update the PuLID prompt to be more forceful about pose and framing:
+Change the studio preset prompt to:
+"Professional studio portrait photograph of this person, pure white seamless background, soft diffused studio lighting with softboxes, standing straight facing camera directly, arms hanging naturally at sides with hands visible, half-body shot framed from top of head to hip level with 15 percent white space above head, relaxed neutral expression, even skin tones, no harsh shadows, extremely detailed and sharp, 8K studio photograph"
+Key changes: "arms hanging naturally at sides with hands visible" (prevents crossed arms), "framed from top of head to hip level with 15 percent white space above head" (prevents too-tight headshot framing), "standing straight" (prevents angled poses).
+Update all three presets (studio, fashion, ecommerce) with the same arms-down and framing language adapted to each style.
+Fix 3: Garment text overlay post-processing
+This is the most important fix. IDM-VTON warps text on garments (GUCCI → GUCCCI, FIRENZE → FRENNZE). Add a post-processing step that overlays the correct text from the original garment image onto the outfit transfer result.
+Approach:
+
+After IDM-VTON generates the outfit image, detect where the garment text region is in the output. Use this method: take the original garment reference image and the output image. The garment is green (RGB roughly 30-80, 120-180, 50-100). Find the green region in the output image by color masking.
+Once you have the green garment region in the output, find the text area within it. The text on the Gucci hoodie is white — find white pixels within the green mask. Get the bounding box of the white text region.
+From the original garment reference image, extract the same text region (the "GUCCI / GG logo / FIRENZE / 1921" block). The garment reference has clean, undistorted text.
+Perspective-transform the clean text block from the garment reference to match the position and angle in the output image, then composite it over the warped text.
+
+Implementation using PIL and basic math (no OpenCV needed):
+
+Convert both images to numpy arrays (use list(img.getdata()) if numpy not available, or install numpy)
+Create a green mask on the output: pixels where G channel > R channel and G channel > B channel and G > 100
+Within the green mask, find white pixels (R>200, G>200, B>200) — this is the text region
+Get the bounding box of the text region in the output
+From the garment reference, extract the text block (crop the center area where GUCCI text lives — approximately the middle 70% width, top 60% height of the garment image)
+Resize this clean text crop to match the bounding box dimensions from step 4
+Create a mask: only paste where the original output had white text pixels (so we don't cover the hoodie fabric)
+Paste the clean text region over the warped text
+
+This doesn't need to be perfect — even an 80% improvement in text legibility is a huge win. If perspective transform is too complex, just do a simple resize-and-paste of the text region. The key insight to document: "Post-processing text correction compensates for diffusion models' inability to preserve typography during garment deformation."
+Add this as a function called correct_garment_text() that runs after transfer_outfit(). Make it graceful — if text detection fails, skip the correction and log a warning rather than crashing.
+Fix 4: Re-run everything and verify
+After implementing fixes 1-3:
+
+Delete all contents of output/
+Run python3 pipeline.py
+Show me cat output/batch_report.json
+For each user, confirm: does the avatar have glasses if the source has glasses? Are arms at sides? Is framing half-body not headshot? Is the hoodie text more legible?
