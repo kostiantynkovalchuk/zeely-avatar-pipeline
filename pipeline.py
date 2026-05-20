@@ -82,10 +82,12 @@ PROMPT_PRESETS = {
     "studio": {
         "name": "Studio Portrait",
         "prompt": (
-            "Professional studio portrait photograph of this person, "
+            "Professional studio portrait photograph of this person "
+            "wearing a plain white crew-neck t-shirt, "
             "pure white seamless background, soft diffused studio lighting with softboxes, "
-            "standing straight facing camera directly, "
-            "arms hanging naturally at sides with hands visible, "
+            "standing perfectly straight facing the camera directly, "
+            "both arms straight down at sides, hands relaxed and visible below hips, "
+            "no posing, no crossed arms, no hands behind back, no hand gestures, "
             "half-body shot framed from top of head to hip level "
             "with 15 percent white space above head, "
             "relaxed neutral expression, even skin tones, no harsh shadows, "
@@ -98,10 +100,12 @@ PROMPT_PRESETS = {
     "fashion": {
         "name": "Fashion Editorial",
         "prompt": (
-            "High-end fashion editorial portrait of this person, "
+            "High-end fashion editorial portrait of this person "
+            "wearing a plain white crew-neck t-shirt, "
             "pure white seamless backdrop, professional fashion photography lighting, "
-            "standing straight facing camera, "
-            "arms hanging naturally at sides with hands visible, "
+            "standing perfectly straight facing the camera directly, "
+            "both arms straight down at sides, hands relaxed and visible below hips, "
+            "no posing, no crossed arms, no hands behind back, no hand gestures, "
             "half-body framing from top of head to hip level "
             "with 15 percent white space above head, "
             "crisp details, magazine-quality skin retouching, "
@@ -114,10 +118,12 @@ PROMPT_PRESETS = {
     "ecommerce": {
         "name": "E-commerce Product",
         "prompt": (
-            "Clean e-commerce model portrait of this person, "
+            "Clean e-commerce model portrait of this person "
+            "wearing a plain white crew-neck t-shirt, "
             "plain white background, flat even lighting, "
-            "standing straight frontal pose facing camera, "
-            "arms hanging naturally at sides with hands visible, "
+            "standing perfectly straight facing the camera directly, "
+            "both arms straight down at sides, hands relaxed and visible below hips, "
+            "no posing, no crossed arms, no hands behind back, no hand gestures, "
             "half-body crop from top of head to hip level "
             "with 15 percent white space above head, "
             "commercial product photography style, "
@@ -809,8 +815,8 @@ def transfer_outfit(
         img = img.resize((OUTPUT_WIDTH, OUTPUT_HEIGHT), Image.LANCZOS)
         img.save(output_path, "PNG", quality=95)
 
-    # Post-process: restore legible garment text warped by diffusion
-    correct_garment_text(output_path, garment_path)
+    # Text post-processing disabled — causes edge artifacts on some garments
+    # correct_garment_text(output_path, garment_path)
 
     qa = assess_quality(output_path)
     status = "PASS" if qa.passed else "WARN"
