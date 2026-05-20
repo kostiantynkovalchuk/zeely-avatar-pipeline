@@ -49,8 +49,8 @@ BG_REMOVAL_VARIANT = "Portrait"
 AVATAR_RESOLUTION = "1024x1024"
 
 VTON_MODEL = "cuuupid/idm-vton:0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985"
-VTON_STEPS = 30
-VTON_SEED = 42
+VTON_STEPS = 40
+VTON_SEED = 0
 
 # Directories
 DEFAULT_INPUT_DIR = "input/users"
@@ -488,7 +488,7 @@ def _run_pulid(image_path: str, preset: dict) -> str:
     """
     Run FLUX PuLID with retry. Returns generated image URL.
     Uploads the source file to fal.ai to obtain a hosted URL — PuLID's
-    reference_images field requires a real HTTPS URL, not a base64 data URI.
+    reference_image_url field requires a real HTTPS URL, not a base64 data URI.
     """
     import fal_client
 
@@ -510,6 +510,29 @@ def _run_pulid(image_path: str, preset: dict) -> str:
     return result["images"][0]["url"]
 
 
+@with_retry
+def _run_face_swap(base_image_path: str, swap_image_path: str) -> str:
+    """
+    Pass 2: face-swap to restore real identity onto the PuLID studio portrait.
+    base_image_url  — PuLID-generated portrait (keeps body/pose/lighting)
+    swap_image_url  — original user photo (provides the real face)
+    Returns the face-swapped image URL.
+    """
+    import fal_client
+
+    base_url = fal_client.upload_file(base_image_path)
+    swap_url = fal_client.upload_file(swap_image_path)
+
+    result = fal_client.subscribe(
+        "fal-ai/face-swap",
+        arguments={
+            "base_image_url": base_url,
+            "swap_image_url": swap_url,
+        },
+    )
+    return result["image"]["url"]
+
+
 def generate_avatar(
     image_path: str,
     output_path: str,
@@ -517,22 +540,37 @@ def generate_avatar(
 ) -> QualityReport:
     """
     Full avatar generation pipeline:
-    1. PRIMARY — FLUX PuLID: upload photo, generate studio portrait w/ white bg
-    2. FALLBACK — BiRefNet + composite: if PuLID fails, cut out background instead
-    3. Automated quality assessment
-
+    Pass 1 — FLUX PuLID: generate studio portrait with white background
+    Pass 2 — face-swap (fal-ai/face-swap): restore real identity onto portrait
+    Fallback — BiRefNet + composite if PuLID fails entirely
     Returns QualityReport.
     """
     log.info(f"Generating avatar for: {image_path}")
 
     preset = PROMPT_PRESETS.get(preset_name, PROMPT_PRESETS[DEFAULT_PRESET])
 
-    # PRIMARY: FLUX PuLID — generates white background natively
+    # PASS 1: FLUX PuLID — studio body/pose/lighting
     try:
-        log.info(f"  → FLUX PuLID studio generation ({preset['name']})...")
-        avatar_url = _run_pulid(image_path, preset)
-        download_image(avatar_url, output_path)
+        log.info(f"  → Pass 1: FLUX PuLID studio generation ({preset['name']})...")
+        pulid_url = _run_pulid(image_path, preset)
+        pulid_path = output_path.replace(".png", "_pulid.png")
+        download_image(pulid_url, pulid_path)
         log.info("  ✓ PuLID portrait generated")
+
+        # PASS 2: face-swap — lock the real face back onto the studio portrait
+        log.info("  → Pass 2: face-swap to restore identity...")
+        try:
+            swapped_url = _run_face_swap(pulid_path, image_path)
+            download_image(swapped_url, output_path)
+            log.info("  ✓ Face swap applied — identity restored")
+        except Exception as swap_err:
+            log.warning(f"  ⚠ Face swap failed ({swap_err}), keeping PuLID result...")
+            import shutil
+            shutil.copy2(pulid_path, output_path)
+        finally:
+            if os.path.exists(pulid_path):
+                os.remove(pulid_path)
+
     except Exception as pulid_err:
         log.warning(f"  ⚠ PuLID failed ({pulid_err}), falling back to BiRefNet composite...")
         image_url = upload_to_fal(image_path)
@@ -557,9 +595,23 @@ def generate_avatar(
 # STEP 2: Outfit Transfer
 # ---------------------------------------------------------------------------
 
+_GARMENT_DESCRIPTIONS: dict[str, str] = {
+    "gucci_hoodie": (
+        "Green Gucci Firenze 1921 hoodie with interlocking GG logo "
+        "and red-navy braided stripe"
+    ),
+}
+
+
 def _garment_description(garment_path: str) -> str:
-    """Derive a human-readable garment description from the filename."""
+    """Return a precise garment description for IDM-VTON guidance.
+
+    Looks up a curated description by filename stem first; falls back to
+    a human-readable version of the filename if not found.
+    """
     stem = Path(garment_path).stem
+    if stem in _GARMENT_DESCRIPTIONS:
+        return _GARMENT_DESCRIPTIONS[stem]
     return stem.replace("_", " ").replace("-", " ").strip() or "garment"
 
 
