@@ -87,12 +87,12 @@ PROMPT_PRESETS = {
             "Professional studio portrait photograph of this person "
             "wearing a plain white crew-neck t-shirt, "
             "pure white seamless background, soft diffused studio lighting with softboxes, "
-            "standing perfectly straight facing the camera directly, "
-            "both arms straight down at sides, hands relaxed and visible below hips, "
-            "no posing, no crossed arms, no hands behind back, no hand gestures, "
             "half-body shot framed from top of head to hip level "
             "with 15 percent white space above head, "
             "relaxed neutral expression, even skin tones, no harsh shadows, "
+            "standing perfectly straight facing the camera directly, "
+            "both arms straight down at sides, hands relaxed and visible below hips, "
+            "no posing, no crossed arms, no hands in pockets, no hand gestures, no folded arms, "
             "extremely detailed and sharp, 8K studio photograph"
         ),
         "guidance_scale": 4.0,
@@ -105,12 +105,12 @@ PROMPT_PRESETS = {
             "High-end fashion editorial portrait of this person "
             "wearing a plain white crew-neck t-shirt, "
             "pure white seamless backdrop, professional fashion photography lighting, "
-            "standing perfectly straight facing the camera directly, "
-            "both arms straight down at sides, hands relaxed and visible below hips, "
-            "no posing, no crossed arms, no hands behind back, no hand gestures, "
             "half-body framing from top of head to hip level "
             "with 15 percent white space above head, "
             "crisp details, magazine-quality skin retouching, "
+            "standing perfectly straight facing the camera directly, "
+            "both arms straight down at sides, hands relaxed and visible below hips, "
+            "no posing, no crossed arms, no hands in pockets, no hand gestures, no folded arms, "
             "shot on medium format camera"
         ),
         "guidance_scale": 5.0,
@@ -123,12 +123,12 @@ PROMPT_PRESETS = {
             "Clean e-commerce model portrait of this person "
             "wearing a plain white crew-neck t-shirt, "
             "plain white background, flat even lighting, "
-            "standing perfectly straight facing the camera directly, "
-            "both arms straight down at sides, hands relaxed and visible below hips, "
-            "no posing, no crossed arms, no hands behind back, no hand gestures, "
             "half-body crop from top of head to hip level "
             "with 15 percent white space above head, "
             "commercial product photography style, "
+            "standing perfectly straight facing the camera directly, "
+            "both arms straight down at sides, hands relaxed and visible below hips, "
+            "no posing, no crossed arms, no hands in pockets, no hand gestures, no folded arms, "
             "sharp focus, consistent color temperature"
         ),
         "guidance_scale": 3.5,

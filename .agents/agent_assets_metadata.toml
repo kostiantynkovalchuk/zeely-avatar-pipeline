@@ -17,7 +17,7 @@ title = "001 — Outfit"
 id = "ZBYZZ-9cFWMhkqR_SVJH8"
 uri = "file://output/002/avatar.png"
 type = "image"
-title = "002 — Avatar (slim woman + pink glasses)"
+title = "002 — Avatar (slim + pink glasses)"
 
 [[outputs]]
 id = "fVjeTHAdWqCzUqZgNyabp"
@@ -29,7 +29,7 @@ title = "002 — Outfit"
 id = "Sv-lBJ194TWQzBP47DN5Y"
 uri = "file://output/003/avatar.png"
 type = "image"
-title = "003 — Avatar (average build man)"
+title = "003 — Avatar (slight build)"
 
 [[outputs]]
 id = "6iT7juD_zrERDuXhnEw7k"
@@ -41,7 +41,7 @@ title = "003 — Outfit"
 id = "UBeTBAWrMfwuATccYIMNu"
 uri = "file://output/004/avatar.png"
 type = "image"
-title = "004 — Avatar (auburn-red hair + dark glasses)"
+title = "004 — Avatar (short torso + auburn hair + dark glasses)"
 
 [[outputs]]
 id = "7eyZGJALJzy0GO9Zy8edB"

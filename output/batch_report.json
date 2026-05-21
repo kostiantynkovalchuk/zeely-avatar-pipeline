@@ -4,8 +4,8 @@
     "success": 4,
     "qa_passed": 0,
     "failed": 0,
-    "seconds": 217.2,
-    "avg_per_user": 54.3,
+    "seconds": 193.6,
+    "avg_per_user": 48.4,
     "preset": "studio",
     "mode": "pulid_primary",
     "parallel": false
@@ -21,26 +21,26 @@
       "avatar_path": "output/001/avatar.png",
       "outfit_path": "output/001/avatar_outfit.png",
       "avatar_qa": {
-        "bg_purity": 0.726935345356398,
-        "blur_score": 158.70504281876734,
+        "bg_purity": 0.4802938289780395,
+        "blur_score": 374.42133725162904,
         "face_detected": true,
-        "face_area_pct": 0.226,
+        "face_area_pct": 0.295,
         "dimensions_ok": true,
         "passed": false
       },
       "outfit_qa": {
-        "bg_purity": 0.7308689117899644,
-        "blur_score": 1156.7080882657053,
+        "bg_purity": 0.4780931787510735,
+        "blur_score": 1146.9982844311478,
         "face_detected": true,
-        "face_area_pct": 0.19,
+        "face_area_pct": 0.14,
         "dimensions_ok": true,
         "passed": false
       },
       "errors": [],
       "timings": {
-        "avatar_s": 27.6,
-        "outfit_s": 15.4,
-        "total_s": 43.0
+        "avatar_s": 26.5,
+        "outfit_s": 20.9,
+        "total_s": 47.4
       }
     },
     {
@@ -50,26 +50,26 @@
       "avatar_path": "output/002/avatar.png",
       "outfit_path": "output/002/avatar_outfit.png",
       "avatar_qa": {
-        "bg_purity": 0.17400472334682862,
-        "blur_score": 866.5055795274675,
+        "bg_purity": 0.015097840755735493,
+        "blur_score": 792.5681666154147,
         "face_detected": true,
-        "face_area_pct": 0.491,
+        "face_area_pct": 0.494,
         "dimensions_ok": true,
         "passed": false
       },
       "outfit_qa": {
-        "bg_purity": 0.17400472334682862,
-        "blur_score": 1557.2722334447826,
+        "bg_purity": 0.01126395534290271,
+        "blur_score": 1299.8974205497386,
         "face_detected": true,
-        "face_area_pct": 0.415,
+        "face_area_pct": 0.444,
         "dimensions_ok": true,
         "passed": false
       },
       "errors": [],
       "timings": {
-        "avatar_s": 28.0,
-        "outfit_s": 9.0,
-        "total_s": 37.0
+        "avatar_s": 36.1,
+        "outfit_s": 8.9,
+        "total_s": 45.0
       }
     },
     {
@@ -79,26 +79,26 @@
       "avatar_path": "output/003/avatar.png",
       "outfit_path": "output/003/avatar_outfit.png",
       "avatar_qa": {
-        "bg_purity": 0.1488237639553429,
-        "blur_score": 462.1827079523088,
+        "bg_purity": 0.21071034228928967,
+        "blur_score": 641.5199774072195,
         "face_detected": true,
-        "face_area_pct": 0.342,
+        "face_area_pct": 0.249,
         "dimensions_ok": true,
         "passed": false
       },
       "outfit_qa": {
-        "bg_purity": 0.13493743099006256,
-        "blur_score": 1303.9223968920342,
+        "bg_purity": 0.21041896699791438,
+        "blur_score": 1374.6384710704442,
         "face_detected": true,
-        "face_area_pct": 0.287,
+        "face_area_pct": 0.211,
         "dimensions_ok": true,
         "passed": false
       },
       "errors": [],
       "timings": {
-        "avatar_s": 39.3,
-        "outfit_s": 11.6,
-        "total_s": 50.9
+        "avatar_s": 28.6,
+        "outfit_s": 12.4,
+        "total_s": 41.0
       }
     },
     {
@@ -108,26 +108,26 @@
       "avatar_path": "output/004/avatar.png",
       "outfit_path": "output/004/avatar_outfit.png",
       "avatar_qa": {
-        "bg_purity": 0.4095356397987977,
-        "blur_score": 371.5284203187451,
+        "bg_purity": 0.37723132131026865,
+        "blur_score": 374.47433280779177,
         "face_detected": true,
-        "face_area_pct": 0.295,
+        "face_area_pct": 0.378,
         "dimensions_ok": true,
         "passed": false
       },
       "outfit_qa": {
-        "bg_purity": 0.4069209299472457,
-        "blur_score": 1210.847881123397,
+        "bg_purity": 0.3739801864801865,
+        "blur_score": 997.8896745516807,
         "face_detected": true,
-        "face_area_pct": 0.258,
+        "face_area_pct": 0.328,
         "dimensions_ok": true,
         "passed": false
       },
       "errors": [],
       "timings": {
-        "avatar_s": 68.5,
-        "outfit_s": 17.9,
-        "total_s": 86.4
+        "avatar_s": 44.5,
+        "outfit_s": 15.8,
+        "total_s": 60.2
       }
     }
   ]
