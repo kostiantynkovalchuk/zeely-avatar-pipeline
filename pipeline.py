@@ -672,28 +672,24 @@ def _garment_description(garment_path: str) -> str:
 
 @with_retry
 def _run_idm_vton(avatar_path: str, garment_path: str, category: str) -> str:
-    """Run IDM-VTON with retry. Returns result URL."""
-    import replicate
+    """
+    Run IDM-VTON via fal.ai (fal-ai/idm-vton). Returns result image URL.
+    Both images are uploaded to fal CDN first; the model requires HTTPS URLs.
+    """
+    import fal_client
 
-    output = replicate.run(
-        VTON_MODEL,
-        input={
-            "human_img": open(avatar_path, "rb"),
-            "garm_img": open(garment_path, "rb"),
-            "garment_des": _garment_description(garment_path),
-            "category": category,
-            "steps": VTON_STEPS,
-            "seed": VTON_SEED,
-            "crop": True,
+    human_url = fal_client.upload_file(avatar_path)
+    garment_url = fal_client.upload_file(garment_path)
+
+    result = fal_client.subscribe(
+        "fal-ai/idm-vton",
+        arguments={
+            "human_image_url": human_url,
+            "garment_image_url": garment_url,
+            "description": _garment_description(garment_path),
         },
-        use_file_output=False,
     )
-
-    if isinstance(output, str):
-        return output
-    elif isinstance(output, list) and len(output) > 0:
-        return str(output[0])
-    return str(output)
+    return result["image"]["url"]
 
 
 def correct_garment_text(outfit_path: str, garment_path: str) -> bool:
@@ -797,16 +793,69 @@ def correct_garment_text(outfit_path: str, garment_path: str) -> bool:
         return False
 
 
+def preprocess_garment(garment_path: str) -> str:
+    """
+    Remove hood, drawstring laces, and collar from a garment image before
+    sending to IDM-VTON.  The laces cross the GUCCI text and cause the model
+    to warp letters around them — removing them gives IDM-VTON a clean front
+    panel to work from.
+
+    Strategy:
+      1. Scan rows top-down for the first row with ≥10 bright (white) pixels —
+         that is the top of the garment text (≈33% from top for the Gucci hoodie).
+      2. Crop to (text_row − 5% padding) downward, trimming 5% from each side.
+      3. Save to a temp sidecar file next to the original.
+
+    Returns the path to the pre-processed image (original untouched).
+    """
+    import numpy as np
+    img = Image.open(garment_path).convert("RGB")
+    w, h = img.size
+    arr = np.array(img)
+    r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
+
+    # Scan for first row containing ≥10 bright pixels (white text)
+    text_row = None
+    for y in range(int(h * 0.20), int(h * 0.60)):
+        bright = int(((r[y] > 180) & (g[y] > 180) & (b[y] > 180)).sum())
+        if bright >= 10:
+            text_row = y
+            break
+
+    if text_row is None:
+        log.warning("  ⚠ preprocess_garment: no text row found, using original garment")
+        return garment_path
+
+    padding = int(h * 0.05)
+    crop_top = max(0, text_row - padding)
+    crop_left = int(w * 0.05)
+    crop_right = w - int(w * 0.05)
+
+    cropped = img.crop((crop_left, crop_top, crop_right, h))
+    new_h = cropped.size[1]
+    log.info(
+        f"  ✓ Preprocessed garment: cropped from {h} to {new_h}px "
+        f"(removed hood/laces above y={crop_top})"
+    )
+
+    out_path = "/tmp/garment_preprocessed.png"
+    cropped.save(out_path, "PNG")
+    return out_path
+
+
 def transfer_outfit(
     avatar_path: str,
     garment_path: str,
     output_path: str,
     category: str = "upper_body",
 ) -> QualityReport:
-    """Outfit transfer with retry, garment text correction, and QA. Returns QualityReport."""
+    """Outfit transfer with retry, garment pre-processing, and QA. Returns QualityReport."""
     log.info(f"  → IDM-VTON outfit transfer (category: {category})...")
 
-    result_url = _run_idm_vton(avatar_path, garment_path, category)
+    # Pre-process garment: strip hood/laces so text region is clean for VTON
+    effective_garment = preprocess_garment(garment_path)
+
+    result_url = _run_idm_vton(avatar_path, effective_garment, category)
     download_image(result_url, output_path)
 
     # Ensure consistent dimensions
@@ -892,7 +941,10 @@ def run_batch(
 
     valid_ext = {".jpg", ".jpeg", ".png", ".webp"}
     user_images = sorted(f for f in Path(input_dir).iterdir() if f.suffix.lower() in valid_ext)
-    outfit_images = sorted(f for f in Path(outfit_dir).iterdir() if f.suffix.lower() in valid_ext)
+    outfit_images = sorted(
+        f for f in Path(outfit_dir).iterdir()
+        if f.suffix.lower() in valid_ext and not f.name.startswith(".")
+    )
 
     if not user_images:
         log.error(f"No images in {input_dir}"); sys.exit(1)
@@ -1012,7 +1064,11 @@ Examples:
     if args.single:
         outfit = args.outfit_single
         if not outfit:
-            ofs = sorted(Path(args.outfits).glob("*"))
+            valid_ext = {".jpg", ".jpeg", ".png", ".webp"}
+            ofs = sorted(
+                f for f in Path(args.outfits).iterdir()
+                if f.suffix.lower() in valid_ext and not f.name.startswith(".")
+            )
             outfit = str(ofs[0]) if ofs else None
         if not outfit:
             log.error("No outfit specified"); sys.exit(1)

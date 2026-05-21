@@ -1,6 +1,6 @@
 {
-  "001.webp": {"glasses": true,  "glasses_description": "round pink-tinted glasses"},
-  "002.jpg":  {"glasses": false},
+  "001.webp": {"glasses": false},
+  "002.jpg":  {"glasses": true,  "glasses_description": "round pink-tinted glasses"},
   "003.webp": {"glasses": false},
   "004.jpg":  {"glasses": true,  "glasses_description": "rectangular dark-framed glasses"}
 }
