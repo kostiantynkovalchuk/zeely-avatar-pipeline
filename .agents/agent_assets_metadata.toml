@@ -60,3 +60,39 @@ id = "baQsSiqr977Cj55kHzseK"
 uri = "file://output/test_no_preprocess.png"
 type = "image"
 title = "001 — WITHOUT preprocessing (raw garment)"
+
+[[outputs]]
+id = "qKW83rx1TsULAXOI5mPVa"
+uri = "file://output_hawaiian/001/avatar_outfit.png"
+type = "image"
+title = "Test 1 — 001 × Hawaiian shirt"
+
+[[outputs]]
+id = "xxQPH3WMJhKi97vcBvTQ0"
+uri = "file://output_hawaiian/002/avatar_outfit.png"
+type = "image"
+title = "Test 1 — 002 × Hawaiian shirt"
+
+[[outputs]]
+id = "LCKfQwHPDqC-JFc-G5uN0"
+uri = "file://output_hawaiian/003/avatar_outfit.png"
+type = "image"
+title = "Test 1 — 003 × Hawaiian shirt"
+
+[[outputs]]
+id = "4eJlNWtGuemYzTZfkN7db"
+uri = "file://output_hawaiian/004/avatar_outfit.png"
+type = "image"
+title = "Test 1 — 004 × Hawaiian shirt"
+
+[[outputs]]
+id = "xowAN6mlv2fFNfH51__aF"
+uri = "file://output_hat/001/avatar_outfit.png"
+type = "image"
+title = "Test 2 — 001 × Cowboy hat"
+
+[[outputs]]
+id = "r4wCOTx2Cz9q_SS-r41PS"
+uri = "file://output_shoes/001/avatar_outfit.png"
+type = "image"
+title = "Test 3 — 001 × Nike sneakers"
