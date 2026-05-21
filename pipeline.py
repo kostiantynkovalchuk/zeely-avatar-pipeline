@@ -808,69 +808,16 @@ def correct_garment_text(outfit_path: str, garment_path: str) -> bool:
         return False
 
 
-def preprocess_garment(garment_path: str) -> str:
-    """
-    Remove hood, drawstring laces, and collar from a garment image before
-    sending to IDM-VTON.  The laces cross the GUCCI text and cause the model
-    to warp letters around them — removing them gives IDM-VTON a clean front
-    panel to work from.
-
-    Strategy:
-      1. Scan rows top-down for the first row with ≥10 bright (white) pixels —
-         that is the top of the garment text (≈33% from top for the Gucci hoodie).
-      2. Crop to (text_row − 5% padding) downward, trimming 5% from each side.
-      3. Save to a temp sidecar file next to the original.
-
-    Returns the path to the pre-processed image (original untouched).
-    """
-    import numpy as np
-    img = Image.open(garment_path).convert("RGB")
-    w, h = img.size
-    arr = np.array(img)
-    r, g, b = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2]
-
-    # Scan for first row containing ≥10 bright pixels (white text)
-    text_row = None
-    for y in range(int(h * 0.20), int(h * 0.60)):
-        bright = int(((r[y] > 180) & (g[y] > 180) & (b[y] > 180)).sum())
-        if bright >= 10:
-            text_row = y
-            break
-
-    if text_row is None:
-        log.warning("  ⚠ preprocess_garment: no text row found, using original garment")
-        return garment_path
-
-    padding = int(h * 0.05)
-    crop_top = max(0, text_row - padding)
-    crop_left = int(w * 0.05)
-    crop_right = w - int(w * 0.05)
-
-    cropped = img.crop((crop_left, crop_top, crop_right, h))
-    new_h = cropped.size[1]
-    log.info(
-        f"  ✓ Preprocessed garment: cropped from {h} to {new_h}px "
-        f"(removed hood/laces above y={crop_top})"
-    )
-
-    out_path = "/tmp/garment_preprocessed.png"
-    cropped.save(out_path, "PNG")
-    return out_path
-
-
 def transfer_outfit(
     avatar_path: str,
     garment_path: str,
     output_path: str,
     category: str = "upper_body",
 ) -> QualityReport:
-    """Outfit transfer with retry, garment pre-processing, and QA. Returns QualityReport."""
-    log.info(f"  → IDM-VTON outfit transfer (category: {category})...")
+    """Outfit transfer with FASHN v1.6 and QA. Returns QualityReport."""
+    log.info(f"  → FASHN outfit transfer (category: {category})...")
 
-    # Pre-process garment: strip hood/laces so text region is clean for VTON
-    effective_garment = preprocess_garment(garment_path)
-
-    result_url = _run_fashn(avatar_path, effective_garment, category)
+    result_url = _run_fashn(avatar_path, garment_path, category)
     download_image(result_url, output_path)
 
     # Ensure consistent dimensions
