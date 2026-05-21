@@ -1,6 +1,20 @@
 {
-  "001.webp": {"glasses": false},
-  "002.jpg":  {"glasses": true,  "glasses_description": "round pink-tinted glasses"},
-  "003.webp": {"glasses": false},
-  "004.jpg":  {"glasses": true,  "glasses_description": "rectangular dark-framed glasses"}
+  "001.webp": {
+    "glasses": false,
+    "body_description": "heavyset young man with broad shoulders and round face"
+  },
+  "002.jpg": {
+    "glasses": true,
+    "glasses_description": "round pink-tinted glasses",
+    "body_description": "slim young woman with narrow shoulders"
+  },
+  "003.webp": {
+    "glasses": false,
+    "body_description": "average build man with slight frame"
+  },
+  "004.jpg": {
+    "glasses": true,
+    "glasses_description": "rectangular dark-framed glasses",
+    "body_description": "young woman with medium build"
+  }
 }

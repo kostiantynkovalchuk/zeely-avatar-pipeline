@@ -5,19 +5,19 @@ generated = []
 id = "k-dw4wydOUw_tkdr4zQoy"
 uri = "file://output/001/avatar.png"
 type = "image"
-title = "001 — Avatar"
+title = "001 — Avatar (heavyset man)"
 
 [[outputs]]
 id = "rWzdPTK9_HDrRD3WItRx_"
 uri = "file://output/001/avatar_outfit.png"
 type = "image"
-title = "001 — FASHN Outfit"
+title = "001 — WITH preprocessing (cropped hood/laces)"
 
 [[outputs]]
 id = "ZBYZZ-9cFWMhkqR_SVJH8"
 uri = "file://output/002/avatar.png"
 type = "image"
-title = "002 — Avatar (pink glasses)"
+title = "002 — Avatar (slim woman + pink glasses)"
 
 [[outputs]]
 id = "fVjeTHAdWqCzUqZgNyabp"
@@ -29,7 +29,7 @@ title = "002 — FASHN Outfit"
 id = "Sv-lBJ194TWQzBP47DN5Y"
 uri = "file://output/003/avatar.png"
 type = "image"
-title = "003 — Avatar"
+title = "003 — Avatar (average build man)"
 
 [[outputs]]
 id = "6iT7juD_zrERDuXhnEw7k"
@@ -41,7 +41,7 @@ title = "003 — FASHN Outfit"
 id = "UBeTBAWrMfwuATccYIMNu"
 uri = "file://output/004/avatar.png"
 type = "image"
-title = "004 — Avatar (dark glasses)"
+title = "004 — Avatar (medium build woman + dark glasses)"
 
 [[outputs]]
 id = "7eyZGJALJzy0GO9Zy8edB"
@@ -54,3 +54,9 @@ id = "zL-5syd_pJfghtlalw49-"
 uri = "file://output/batch_report.json"
 type = "unspecified"
 title = "batch_report.json"
+
+[[outputs]]
+id = "baQsSiqr977Cj55kHzseK"
+uri = "file://output/test_no_preprocess.png"
+type = "image"
+title = "001 — WITHOUT preprocessing (raw garment)"

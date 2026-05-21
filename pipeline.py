@@ -524,13 +524,23 @@ def _load_user_attributes(image_path: str) -> dict:
 def _build_prompt(preset: dict, user_attrs: dict) -> str:
     """
     Start from the preset prompt and inject attribute-specific language.
-    Currently handles: glasses.
+    Handles: body_description (gender + build), glasses.
+    Injection order: body_description first, then glasses, so the final phrase reads
+    "this <body> wearing <glasses>" naturally.
     """
     base = preset["prompt"]
+    # 1. Replace "this person" with body-aware description if provided
+    if user_attrs.get("body_description"):
+        body = user_attrs["body_description"]
+        base = base.replace("this person", f"this {body}", 1)
+    # 2. Append glasses after the subject phrase
     if user_attrs.get("glasses"):
         desc = user_attrs.get("glasses_description", "glasses")
-        # Inject immediately after "this person" so all three presets are covered
-        base = base.replace("this person", f"this person wearing {desc}", 1)
+        # Match whichever phrase is now the subject (body-replaced or original)
+        for subject in [user_attrs.get("body_description", ""), "person"]:
+            if subject and f"this {subject}" in base:
+                base = base.replace(f"this {subject}", f"this {subject} wearing {desc}", 1)
+                break
     return base
 
 
