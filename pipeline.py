@@ -48,9 +48,11 @@ BG_REMOVAL_MODEL = "fal-ai/birefnet/v2"
 BG_REMOVAL_VARIANT = "Portrait"
 AVATAR_RESOLUTION = "1024x1024"
 
-VTON_MODEL = "cuuupid/idm-vton:0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985"
-VTON_STEPS = 40
-VTON_SEED = 0
+FASHN_CATEGORY_MAP = {
+    "upper_body": "tops",
+    "lower_body": "bottoms",
+    "dresses": "one-piece",
+}
 
 # Directories
 DEFAULT_INPUT_DIR = "input/users"
@@ -671,25 +673,28 @@ def _garment_description(garment_path: str) -> str:
 
 
 @with_retry
-def _run_idm_vton(avatar_path: str, garment_path: str, category: str) -> str:
+def _run_fashn(avatar_path: str, garment_path: str, category: str) -> str:
     """
-    Run IDM-VTON via fal.ai (fal-ai/idm-vton). Returns result image URL.
+    Run FASHN Virtual Try-On v1.6 via fal.ai. Returns result image URL.
+    FASHN is designed to preserve garment text, logos, and patterns.
     Both images are uploaded to fal CDN first; the model requires HTTPS URLs.
+    category is mapped from pipeline convention (upper_body) to FASHN format (tops).
     """
     import fal_client
 
-    human_url = fal_client.upload_file(avatar_path)
+    model_url = fal_client.upload_file(avatar_path)
     garment_url = fal_client.upload_file(garment_path)
+    fashn_category = FASHN_CATEGORY_MAP.get(category, "tops")
 
     result = fal_client.subscribe(
-        "fal-ai/idm-vton",
+        "fal-ai/fashn/tryon/v1.6",
         arguments={
-            "human_image_url": human_url,
-            "garment_image_url": garment_url,
-            "description": _garment_description(garment_path),
+            "model_image": model_url,
+            "garment_image": garment_url,
+            "category": fashn_category,
         },
     )
-    return result["image"]["url"]
+    return result["images"][0]["url"]
 
 
 def correct_garment_text(outfit_path: str, garment_path: str) -> bool:
@@ -855,7 +860,7 @@ def transfer_outfit(
     # Pre-process garment: strip hood/laces so text region is clean for VTON
     effective_garment = preprocess_garment(garment_path)
 
-    result_url = _run_idm_vton(avatar_path, effective_garment, category)
+    result_url = _run_fashn(avatar_path, effective_garment, category)
     download_image(result_url, output_path)
 
     # Ensure consistent dimensions

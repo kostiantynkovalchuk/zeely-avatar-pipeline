@@ -5,13 +5,13 @@ generated = []
 id = "k-dw4wydOUw_tkdr4zQoy"
 uri = "file://output/001/avatar.png"
 type = "image"
-title = "001 — Avatar (no glasses)"
+title = "001 — Avatar"
 
 [[outputs]]
 id = "rWzdPTK9_HDrRD3WItRx_"
 uri = "file://output/001/avatar_outfit.png"
 type = "image"
-title = "001 — Outfit (hood-cropped garment)"
+title = "001 — FASHN Outfit"
 
 [[outputs]]
 id = "ZBYZZ-9cFWMhkqR_SVJH8"
@@ -23,19 +23,19 @@ title = "002 — Avatar (pink glasses)"
 id = "fVjeTHAdWqCzUqZgNyabp"
 uri = "file://output/002/avatar_outfit.png"
 type = "image"
-title = "002 — Outfit"
+title = "002 — FASHN Outfit"
 
 [[outputs]]
 id = "Sv-lBJ194TWQzBP47DN5Y"
 uri = "file://output/003/avatar.png"
 type = "image"
-title = "003 — Avatar (no glasses)"
+title = "003 — Avatar"
 
 [[outputs]]
 id = "6iT7juD_zrERDuXhnEw7k"
 uri = "file://output/003/avatar_outfit.png"
 type = "image"
-title = "003 — Outfit"
+title = "003 — FASHN Outfit"
 
 [[outputs]]
 id = "UBeTBAWrMfwuATccYIMNu"
@@ -47,7 +47,7 @@ title = "004 — Avatar (dark glasses)"
 id = "7eyZGJALJzy0GO9Zy8edB"
 uri = "file://output/004/avatar_outfit.png"
 type = "image"
-title = "004 — Outfit"
+title = "004 — FASHN Outfit"
 
 [[outputs]]
 id = "zL-5syd_pJfghtlalw49-"
