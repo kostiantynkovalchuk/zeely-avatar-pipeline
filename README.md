@@ -21,6 +21,17 @@ python pipeline.py
 
 ---
 
+## Results
+
+| User | Input | Avatar | Outfit Transfer |
+|------|-------|--------|-----------------|
+| 001 | ![](input/users/001.webp) | ![](output/001/avatar.png) | ![](output/001/avatar_outfit.png) |
+| 002 | ![](input/users/002.jpg) | ![](output/002/avatar.png) | ![](output/002/avatar_outfit.png) |
+| 003 | ![](input/users/003.webp) | ![](output/003/avatar.png) | ![](output/003/avatar_outfit.png) |
+| 004 | ![](input/users/004.jpg) | ![](output/004/avatar.png) | ![](output/004/avatar_outfit.png) |
+
+---
+
 ## Architecture
 
 Three stages, all on fal.ai:

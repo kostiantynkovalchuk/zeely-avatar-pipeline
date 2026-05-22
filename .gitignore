@@ -6,3 +6,5 @@ experiments/
 output_*/
 output/
 *.avif
+.agents/
+attached_assets/
