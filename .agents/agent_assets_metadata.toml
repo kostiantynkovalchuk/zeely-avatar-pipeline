@@ -96,3 +96,33 @@ id = "r4wCOTx2Cz9q_SS-r41PS"
 uri = "file://output_shoes/001/avatar_outfit.png"
 type = "image"
 title = "Test 3 — 001 × Nike sneakers"
+
+[[outputs]]
+id = "-l2-dpDAVE6be8Raa9-le"
+uri = "file://output_denim/001/avatar_outfit.png"
+type = "image"
+title = "001 × Denim jacket"
+
+[[outputs]]
+id = "Nj-2OLofZYaSlSBLe_C6Z"
+uri = "file://output_denim/002/avatar_outfit.png"
+type = "image"
+title = "002 × Denim jacket"
+
+[[outputs]]
+id = "KHpWqpgGZvr9ZceRdbJNW"
+uri = "file://output_denim/003/avatar_outfit.png"
+type = "image"
+title = "003 × Denim jacket"
+
+[[outputs]]
+id = "0K-XybgY2-9Dcv2iZ8zOE"
+uri = "file://output_denim/004/avatar_outfit.png"
+type = "image"
+title = "004 × Denim jacket"
+
+[[outputs]]
+id = "w5T9nEbtH3RUAT6WvynU0"
+uri = "file://output_denim/batch_report.json"
+type = "unspecified"
+title = "batch_report.json"
