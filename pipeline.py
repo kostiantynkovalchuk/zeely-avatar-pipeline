@@ -1,24 +1,19 @@
 """
 Zeely AI Avatar Generator Pipeline
 ====================================
-Two-stage automated engine:
-  1. Avatar Generation: User photo → Studio portrait on white background (#FFFFFF)
-  2. Outfit Transfer: Avatar + garment image/prompt → Same person in new outfit
-
-APIs used:
-  - fal.ai BiRefNet (portrait mode) — background removal
-  - fal.ai FLUX PuLID — identity-preserving studio portrait generation
-  - Replicate IDM-VTON — virtual try-on / outfit transfer
+Three-stage automated engine, all on fal.ai:
+  1. FLUX PuLID — identity-preserving studio portrait from user photo
+  2. fal.ai face-swap — restores real face onto PuLID body (fixes identity drift)
+  3. FASHN v1.6 — virtual try-on transfers garment onto avatar
 
 Production features:
   - Retry with exponential backoff on API failures
   - Upload caching (deduplication via content hash)
   - Automated quality scoring (background purity, blur, face detection)
+  - Per-user attribute injection (glasses, body type, hair) via user_attributes.json
   - Configurable prompt presets (studio / fashion / ecommerce)
   - Parallel batch processing with ThreadPoolExecutor
   - Structured JSON reporting with per-image QA metrics and timings
-
-Author: Konstantin Kovalchuk
 """
 
 import os
@@ -41,7 +36,6 @@ from PIL import Image, ImageFilter, ImageStat
 # ---------------------------------------------------------------------------
 
 FAL_API_KEY = os.environ.get("FAL_KEY", "")
-REPLICATE_API_TOKEN = os.environ.get("REPLICATE_API_TOKEN", "")
 
 # Model identifiers
 BG_REMOVAL_MODEL = "fal-ai/birefnet/v2"
@@ -416,8 +410,6 @@ def remove_background_fal(image_url: str) -> str:
 def composite_on_white(foreground_path: str, output_path: str) -> str:
     """Composite transparent PNG onto pure white, auto-crop to portrait framing."""
     raw = Image.open(foreground_path)
-    log.info(f"  [DEBUG] fg mode after open: {raw.mode}, size={raw.size}")
-
     fg = raw.convert("RGBA")
 
     # Clean up near-transparent background fringe from BiRefNet refinement.
@@ -662,26 +654,6 @@ def generate_avatar(
 # STEP 2: Outfit Transfer
 # ---------------------------------------------------------------------------
 
-_GARMENT_DESCRIPTIONS: dict[str, str] = {
-    "gucci_hoodie": (
-        "Green Gucci Firenze 1921 hoodie with interlocking GG logo "
-        "and red-navy braided stripe"
-    ),
-}
-
-
-def _garment_description(garment_path: str) -> str:
-    """Return a precise garment description for IDM-VTON guidance.
-
-    Looks up a curated description by filename stem first; falls back to
-    a human-readable version of the filename if not found.
-    """
-    stem = Path(garment_path).stem
-    if stem in _GARMENT_DESCRIPTIONS:
-        return _GARMENT_DESCRIPTIONS[stem]
-    return stem.replace("_", " ").replace("-", " ").strip() or "garment"
-
-
 @with_retry
 def _run_fashn(avatar_path: str, garment_path: str, category: str) -> str:
     """
@@ -707,107 +679,6 @@ def _run_fashn(avatar_path: str, garment_path: str, category: str) -> str:
     return result["images"][0]["url"]
 
 
-def correct_garment_text(outfit_path: str, garment_path: str) -> bool:
-    """
-    Post-process an IDM-VTON result to restore legible garment text.
-
-    IDM-VTON wrecks typography — the text pixels are not white; they are
-    brighter-than-average pixels within the green garment region.  We detect
-    text by luminance contrast (pixels > mean + 1.5σ inside the green mask),
-    find the same region in the clean garment reference, and paste the clean
-    version back using the contrast mask so only text pixels are touched.
-
-    Gracefully skips (logs a warning) if any step fails.
-    Returns True if the correction was applied, False otherwise.
-    """
-    try:
-        import numpy as np
-
-        outfit = Image.open(outfit_path).convert("RGB")
-        garment = Image.open(garment_path).convert("RGB")
-
-        out_arr = np.array(outfit, dtype=np.float32)
-        r, g, b = out_arr[:, :, 0], out_arr[:, :, 1], out_arr[:, :, 2]
-
-        # ── 1. Green garment mask ───────────────────────────────────────────
-        green_mask = (g > r + 20) & (g > b + 20) & (g > 60)
-        if green_mask.sum() < 500:
-            log.warning("  ⚠ correct_garment_text: green region too small, skipping")
-            return False
-
-        # ── 2. Detect text via luminance contrast inside the green region ───
-        lum = 0.299 * r + 0.587 * g + 0.114 * b
-        g_lum = lum[green_mask]
-        bright_thresh = g_lum.mean() + 1.5 * g_lum.std()
-        text_mask = (lum > bright_thresh) & green_mask
-
-        if text_mask.sum() < 50:
-            log.warning("  ⚠ correct_garment_text: no text contrast found in garment, skipping")
-            return False
-
-        # ── 3. Bounding box of text region in the output ────────────────────
-        rows = np.where(text_mask.any(axis=1))[0]
-        cols = np.where(text_mask.any(axis=0))[0]
-        y1, y2 = int(rows.min()), int(rows.max())
-        x1, x2 = int(cols.min()), int(cols.max())
-        text_w, text_h = x2 - x1, y2 - y1
-
-        if text_w < 20 or text_h < 5:
-            log.warning("  ⚠ correct_garment_text: text bbox too small, skipping")
-            return False
-
-        # ── 4. Extract clean text block from garment reference ───────────────
-        gw, gh = garment.size
-        ref_crop = garment.crop((
-            int(gw * 0.10), int(gh * 0.05),
-            int(gw * 0.90), int(gh * 0.60),
-        ))
-        ref_arr = np.array(ref_crop, dtype=np.float32)
-        rr, rg, rb = ref_arr[:, :, 0], ref_arr[:, :, 1], ref_arr[:, :, 2]
-
-        # Text in reference: bright pixels inside the green region
-        ref_green = (rg > rr + 20) & (rg > rb + 20) & (rg > 60)
-        ref_lum = 0.299 * rr + 0.587 * rg + 0.114 * rb
-        if ref_green.sum() > 50:
-            ref_g_lum = ref_lum[ref_green]
-            ref_thresh = ref_g_lum.mean() + 1.5 * ref_g_lum.std()
-            ref_text = (ref_lum > ref_thresh) & ref_green
-        else:
-            # Fallback: just use brightest pixels in entire crop
-            ref_thresh = ref_lum.mean() + 1.5 * ref_lum.std()
-            ref_text = ref_lum > ref_thresh
-
-        if ref_text.sum() > 50:
-            rrows = np.where(ref_text.any(axis=1))[0]
-            rcols = np.where(ref_text.any(axis=0))[0]
-            ref_crop = ref_crop.crop((
-                int(rcols.min()), int(rrows.min()),
-                int(rcols.max()), int(rrows.max()),
-            ))
-
-        # ── 5. Resize clean text to match output bbox and paste ─────────────
-        clean_resized = ref_crop.resize((text_w, text_h), Image.LANCZOS)
-
-        # Paste mask: only touch the detected text pixels
-        mask_arr = (text_mask[y1:y2, x1:x2].astype(np.uint8) * 255)
-        mask_img = Image.fromarray(mask_arr)
-
-        outfit_rgb = Image.open(outfit_path).convert("RGB")
-        outfit_rgb.paste(clean_resized, (x1, y1), mask_img)
-        outfit_rgb.save(outfit_path, "PNG")
-
-        log.info(
-            f"  ✓ Garment text corrected "
-            f"(bbox {x1},{y1}→{x2},{y2} = {text_w}×{text_h}px, "
-            f"{text_mask.sum():.0f} text pixels)"
-        )
-        return True
-
-    except Exception as exc:
-        log.warning(f"  ⚠ correct_garment_text failed: {exc}, skipping")
-        return False
-
-
 def transfer_outfit(
     avatar_path: str,
     garment_path: str,
@@ -825,9 +696,6 @@ def transfer_outfit(
     if img.size != (OUTPUT_WIDTH, OUTPUT_HEIGHT):
         img = img.resize((OUTPUT_WIDTH, OUTPUT_HEIGHT), Image.LANCZOS)
         img.save(output_path, "PNG", quality=95)
-
-    # Text post-processing disabled — causes edge artifacts on some garments
-    # correct_garment_text(output_path, garment_path)
 
     qa = assess_quality(output_path)
     status = "PASS" if qa.passed else "WARN"
@@ -1020,8 +888,6 @@ Examples:
 
     if not FAL_API_KEY:
         log.error("FAL_KEY not set → https://fal.ai/dashboard/keys"); sys.exit(1)
-    if not REPLICATE_API_TOKEN:
-        log.error("REPLICATE_API_TOKEN not set → https://replicate.com/account/api-tokens"); sys.exit(1)
 
     if args.single:
         outfit = args.outfit_single

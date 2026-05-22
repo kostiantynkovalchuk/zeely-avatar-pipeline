@@ -1,38 +1,60 @@
 flowchart TD
     subgraph INPUT["📁 Input"]
-        A["User Photo\n(arbitrary background & pose)"]
-        G["Garment Reference Image\nor Text Prompt"]
+        A["User Photo\n(JPG / PNG / WebP)"]
+        B["user_attributes.json\n(glasses, body_description, hair)"]
+        G["Garment Reference Image\n(input/outfits/)"]
     end
 
-    subgraph STEP1["Stage 1: Avatar Generation"]
-        B["Upload to fal.ai CDN"]
-        C["BiRefNet v2 — Portrait Mode\nBackground Removal\nTransparent PNG output"]
-        D["Composite on White #FFFFFF\n+ Auto-crop to 3:4 portrait\n+ Resize to 768×1024"]
-        E{"PuLID\nEnhancement?"}
-        F["FLUX PuLID\nIdentity-preserving\nstudio relight"]
-        H["avatar.png ✓"]
+    subgraph ATTRS["Attribute Injection"]
+        C["_load_user_attributes()\nLoad per-user JSON entry"]
+        D["_build_prompt()\nInject body_description + glasses\ninto preset prompt"]
     end
 
-    subgraph STEP2["Stage 2: Outfit Transfer"]
-        I["IDM-VTON via Replicate\ncuuupid/idm-vton\nauto_mask + auto_crop"]
-        J["Post-processing\nWhite BG verification\nDimension matching"]
-        K["avatar_outfit.png ✓"]
+    subgraph STAGE1["Stage 1 — Avatar Generation  (fal.ai)"]
+        E["fal_client.upload_file()\nUpload to fal.ai CDN\n── Upload Cache (MD5 dedup) ──"]
+        F["@with_retry\nfal-ai/flux-pulid\nFLUX PuLID\nIdentity-preserving studio portrait\n(body · pose · lighting · background)"]
+        FQ["Pass 1 result: _pulid.png"]
+        FS["@with_retry\nfal-ai/face-swap\nPin real face onto PuLID body\n(restores identity drift)"]
+        H["avatar.png ✓\n768×1024 · white BG"]
+        FB["Fallback: fal-ai/birefnet/v2\nBackground removal + composite\n(if PuLID fails)"]
+    end
+
+    subgraph QA1["QA Scoring"]
+        QA["assess_quality()\nbg_purity · blur_score\nface_detected · dimensions_ok"]
+    end
+
+    subgraph STAGE2["Stage 2 — Outfit Transfer  (fal.ai)"]
+        I["fal_client.upload_file()\nUpload avatar + garment to CDN"]
+        J["@with_retry\nfal-ai/fashn/tryon/v1.6\nFASHN Virtual Try-On v1.6\nPixel-space garment transfer\n(preserves text · logos · patterns)\ncategory: tops | bottoms | one-piece"]
+        K["avatar_outfit.png ✓\n768×1024"]
+    end
+
+    subgraph QA2["QA Scoring"]
+        QAO["assess_quality()\nsame metrics as Stage 1"]
     end
 
     subgraph OUTPUT["📁 Output"]
-        L["output/\n  001/avatar.png\n  001/avatar_outfit.png\n  batch_report.json"]
+        L["output/\n  001/avatar.png\n  001/avatar_outfit.png\n  002/ ...\n  batch_report.json"]
     end
 
-    A --> B
+    A --> C
     B --> C
     C --> D
     D --> E
-    E -- Yes --> F
-    F --> H
-    E -- No --> H
+    A --> E
+    E --> F
+    F --> FQ
+    FQ --> FS
+    A --> FS
+    FS --> H
+    F -. PuLID fails .-> FB
+    FB --> H
+    H --> QA
+    QA --> L
+
     H --> I
     G --> I
     I --> J
     J --> K
-    K --> L
-    H --> L
+    K --> QAO
+    QAO --> L

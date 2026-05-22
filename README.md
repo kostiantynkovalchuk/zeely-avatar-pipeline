@@ -1,196 +1,143 @@
 # Zeely AI Avatar Generator Pipeline
 
-Automated two-stage engine: **user photo → studio avatar on white background → outfit transfer**.
+Automated three-stage engine: **user photo → studio avatar → virtual try-on outfit**.  
+All inference runs on [fal.ai](https://fal.ai) — single API key, single billing dashboard.
 
 ---
 
-## Quick start
+## Quick Start
 
 ```bash
-# 1. Install
 pip install -r requirements.txt
 
-# 2. Set API keys
-export FAL_KEY="your-key"            # https://fal.ai/dashboard/keys
-export REPLICATE_API_TOKEN="your-key" # https://replicate.com/account/api-tokens
+export FAL_KEY="your-key"   # https://fal.ai/dashboard/keys
 
-# 3. Add images
-#    input/users/   ← user photos (JPG/PNG/WebP)
-#    input/outfits/ ← garment reference images
+# Add inputs
+# input/users/   ← user photos (JPG/PNG/WebP)
+# input/outfits/ ← garment reference images
 
-# 4. Run
-python pipeline.py                   # Basic batch
-python pipeline.py --pulid           # + studio relight
-python pipeline.py --parallel        # Parallel processing
-python pipeline.py --preset fashion  # Fashion editorial preset
+python pipeline.py
 ```
 
 ---
 
 ## Architecture
 
+Three stages, all on fal.ai:
+
 ```
-User Photo ──→ [BiRefNet Portrait] ──→ [White BG Composite] ──→ avatar.png
-                                                                    │
-Garment Ref ──────────────────────────────→ [IDM-VTON] ──→ avatar_outfit.png
-                                                                    │
-                                                              [Quality Scoring]
-                                                                    │
-                                                            batch_report.json
+User Photo ──────────────────────────────────────────────────────────────────┐
+  + user_attributes.json (glasses, body type, hair)                          │
+                                                                              ▼
+                                                              [FLUX PuLID] ──→ studio portrait
+                                                                              │
+                                                           [fal.ai face-swap] ──→ avatar.png
+                                                                              │
+Garment Image ──────────────────────────────── [FASHN v1.6 Try-On] ──→ avatar_outfit.png
+                                                                              │
+                                                                     [QA Scoring]
+                                                                              │
+                                                                    batch_report.json
 ```
 
-### Stage 1 — Avatar generation
-
-| Step | Tool | What it does |
-|------|------|------|
-| 1a | fal.ai BiRefNet v2 (portrait) | Background removal with hair/edge refinement |
-| 1b | Pillow compositing | White #FFFFFF background, auto-crop to 3:4, resize to 768×1024 |
-| 1c | fal.ai FLUX PuLID *(optional)* | Identity-preserving studio relight via face embeddings |
-| 1d | Quality scorer | Background purity, sharpness, face detection, dimensions |
-
-### Stage 2 — Outfit transfer
-
-| Step | Tool | What it does |
-|------|------|------|
-| 2a | Replicate IDM-VTON | Virtual try-on with auto-masking |
-| 2b | Post-processing | Dimension normalization |
-| 2c | Quality scorer | Same metrics as stage 1 |
+| Stage | Model | Role |
+|-------|-------|------|
+| 1a | `fal-ai/flux-pulid` | Generates studio portrait with correct body, pose, lighting |
+| 1b | `fal-ai/face-swap` | Pins real face back onto PuLID body (fixes identity drift) |
+| 2 | `fal-ai/fashn/tryon/v1.6` | Transfers garment onto avatar, preserving text and patterns |
 
 ---
 
-## Production features
+## User Attributes System
 
-### Retry with exponential backoff
+Per-user customization without code changes. Edit `input/users/user_attributes.json`:
 
-Every API call wraps in `@with_retry` — handles network drops, rate limits (429), and server errors (5xx) with 2s → 4s → 8s backoff over 3 attempts.
+```json
+{
+  "001.webp": {
+    "glasses": false,
+    "body_description": "heavyset young man with broad shoulders and round face"
+  },
+  "002.jpg": {
+    "glasses": true,
+    "glasses_description": "round pink-tinted glasses",
+    "body_description": "slim young woman with narrow shoulders"
+  }
+}
+```
 
-### Upload caching
+**`body_description`** — injected into the PuLID prompt before generation; controls gender, build, and hair color. PuLID uses this to shape the generated body before face-swap pins the real face.
 
-`UploadCache` hashes file content (MD5) before uploading. Same image referenced twice → one CDN upload. In batch processing with shared outfits, this eliminates redundant transfers.
-
-### Quality scoring
-
-`assess_quality()` runs four automated checks per image:
-
-| Metric | Method | Threshold |
-|--------|--------|-----------|
-| Background purity | Border pixel sampling (outer 5%) | ≥ 95% near-white |
-| Sharpness | Laplacian variance on center crop | ≥ 80 |
-| Face presence | Skin-tone heuristic in upper-center | ≥ 10% samples |
-| Dimensions | Exact match to 768×1024 | Exact |
-
-Results are embedded in the batch report JSON for every image.
-
-### Parallel processing
-
-`--parallel` flag enables `ThreadPoolExecutor` with bounded concurrency (default 3 workers). Respects API rate limits while processing multiple users simultaneously.
-
-### Configurable prompt presets
-
-Three built-in presets with different guidance scales, identity weights, and step counts:
-
-| Preset | Use case | Steps | Guidance | ID weight |
-|--------|----------|-------|----------|-----------|
-| `studio` | Clean headshots | 30 | 4.0 | 1.0 |
-| `fashion` | Editorial look | 35 | 5.0 | 0.9 |
-| `ecommerce` | Product shots | 25 | 3.5 | 1.0 |
+**`glasses`** — when `true`, the `glasses_description` is injected into the PuLID prompt so glasses are generated as part of the portrait (not added by face-swap, which would lose them).
 
 ---
 
-## CLI reference
+## CLI Reference
 
-```bash
+```
 python pipeline.py [options]
 
 Options:
-  -i, --input DIR        User photos directory (default: input/users)
-  -f, --outfits DIR      Outfit references directory (default: input/outfits)
-  -o, --output DIR       Output directory (default: output)
-  --pulid                Enable PuLID studio enhancement
-  -p, --preset NAME      Prompt preset: studio|fashion|ecommerce
-  -c, --category CAT     IDM-VTON category: upper_body|lower_body|dresses
-  --parallel             Enable parallel batch processing
-  -s, --single PATH      Process single image instead of batch
-  --outfit-single PATH   Outfit image for single mode
-  --qa-only PATH         Score an existing image without generating
+  -i, --input DIR          User photos directory       (default: input/users)
+  -f, --outfits DIR        Garment images directory    (default: input/outfits)
+  -o, --output DIR         Output directory            (default: output)
+  -p, --preset NAME        Prompt preset: studio | fashion | ecommerce
+  -c, --category CAT       Garment category: upper_body | lower_body | dresses
+  --parallel               Enable parallel batch processing (3 workers)
+  -s, --single PATH        Process a single user photo instead of batch
+  --outfit-single PATH     Garment image to use in single mode
+  --qa-only PATH           Score an existing image without generating
+```
+
+**Examples:**
+
+```bash
+python pipeline.py                                      # Batch, defaults
+python pipeline.py --preset fashion                     # Fashion editorial preset
+python pipeline.py --parallel                           # Parallel batch
+python pipeline.py -s input/users/001.webp              # Single user
+python pipeline.py -s input/users/001.webp \
+  --outfit-single input/outfits/shirt.webp              # Single user + specific garment
+python pipeline.py -o output_denim \
+  -f input/outfits_denim                                # Custom output + outfit dir
+python pipeline.py --qa-only output/001/avatar.png      # QA score only
 ```
 
 ---
 
-## Output structure
+## Output Structure
 
 ```
 output/
 ├── 001/
-│   ├── avatar.png            # 768×1024, white BG
-│   └── avatar_outfit.png     # Same person, new outfit
+│   ├── avatar.png          # 768×1024, white background, studio portrait
+│   └── avatar_outfit.png   # Same person wearing the garment
 ├── 002/
 │   ├── avatar.png
 │   └── avatar_outfit.png
 ├── 003/ ...
-└── batch_report.json          # Full results with QA and timings
-```
-
-### Batch report sample
-
-```json
-{
-  "summary": {
-    "total": 3,
-    "success": 3,
-    "qa_passed": 2,
-    "failed": 0,
-    "seconds": 87.3,
-    "avg_per_user": 29.1
-  },
-  "results": [
-    {
-      "user_id": "001",
-      "status": "success",
-      "avatar_qa": {
-        "bg_purity": 0.98,
-        "blur_score": 142.5,
-        "face_detected": true,
-        "passed": true
-      },
-      "timings": { "avatar_s": 12.3, "outfit_s": 18.1, "total_s": 30.4 }
-    }
-  ]
-}
+├── 004/ ...
+└── batch_report.json       # Full QA metrics and timings per user
 ```
 
 ---
 
-## Cost per user
+## Pipeline Evolution
 
-| API call | Cost |
-|---|---|
-| fal.ai BiRefNet v2 | ~$0.02 |
-| fal.ai FLUX PuLID *(optional)* | ~$0.06 |
-| Replicate IDM-VTON | ~$0.03 |
-| **Total (without PuLID)** | **~$0.05** |
-| **Total (with PuLID)** | **~$0.11** |
+Started with BiRefNet background removal + IDM-VTON → cutout approach produced inferior results compared to full AI-generated studio portraits → pivoted to PuLID as primary generator → added face-swap for identity preservation → migrated from IDM-VTON (Replicate) to FASHN v1.6 (fal.ai) for garment text and pattern preservation → consolidated entire pipeline onto fal.ai.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical narrative.
 
 ---
 
-## Extending the pipeline
+## Cost Per User
 
-### Text-to-garment generation
-
-When no garment reference image is available:
-
-```python
-import fal_client
-result = fal_client.subscribe("fal-ai/flux/dev", arguments={
-    "prompt": "Navy blue blazer, product flat lay, white background",
-    "image_size": {"width": 768, "height": 1024},
-})
-# Feed result into IDM-VTON step
-```
-
-### Multiple outfits per user
-
-The pipeline auto-cycles through `input/outfits/`. For N outfits × M users, run N passes with different outfit directories.
+| Stage | Model | Est. cost |
+|-------|-------|-----------|
+| Avatar generation | FLUX PuLID | ~$0.055 |
+| Face restoration | fal.ai face-swap | ~$0.003 |
+| Outfit transfer | FASHN v1.6 | ~$0.075 |
+| **Total** | | **~$0.13 / user** |
 
 ---
 
@@ -198,9 +145,9 @@ The pipeline auto-cycles through `input/outfits/`. For N outfits × M users, run
 
 ```
 fal-client>=0.5.0
-replicate>=1.0.0
 Pillow>=10.0.0
 requests>=2.31.0
+numpy>=1.24.0
 ```
 
-Python 3.10+. No GPU required (all inference is cloud API).
+Python 3.10+. No GPU required — all inference is cloud API.

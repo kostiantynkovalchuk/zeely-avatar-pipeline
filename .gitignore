@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.pythonlibs/
+.env
+experiments/
+output_*/
+output/
+*.avif
