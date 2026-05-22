@@ -23,12 +23,33 @@ python pipeline.py
 
 ## Results
 
-| User | Input | Avatar | Outfit Transfer |
-|------|-------|--------|-----------------|
-| 001 | ![](input/users/001.webp) | ![](output/001/avatar.png) | ![](output/001/avatar_outfit.png) |
-| 002 | ![](input/users/002.jpg) | ![](output/002/avatar.png) | ![](output/002/avatar_outfit.png) |
-| 003 | ![](input/users/003.webp) | ![](output/003/avatar.png) | ![](output/003/avatar_outfit.png) |
-| 004 | ![](input/users/004.jpg) | ![](output/004/avatar.png) | ![](output/004/avatar_outfit.png) |
+<table>
+<tr><th>User</th><th>Input</th><th>Avatar</th><th>Outfit Transfer</th></tr>
+<tr>
+<td>001</td>
+<td><img src="input/users/001.webp" width="200"></td>
+<td><img src="output/001/avatar.png" width="200"></td>
+<td><img src="output/001/avatar_outfit.png" width="200"></td>
+</tr>
+<tr>
+<td>002</td>
+<td><img src="input/users/002.jpg" width="200"></td>
+<td><img src="output/002/avatar.png" width="200"></td>
+<td><img src="output/002/avatar_outfit.png" width="200"></td>
+</tr>
+<tr>
+<td>003</td>
+<td><img src="input/users/003.webp" width="200"></td>
+<td><img src="output/003/avatar.png" width="200"></td>
+<td><img src="output/003/avatar_outfit.png" width="200"></td>
+</tr>
+<tr>
+<td>004</td>
+<td><img src="input/users/004.jpg" width="200"></td>
+<td><img src="output/004/avatar.png" width="200"></td>
+<td><img src="output/004/avatar_outfit.png" width="200"></td>
+</tr>
+</table>
 
 ---
 
